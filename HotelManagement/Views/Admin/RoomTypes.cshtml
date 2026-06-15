@@ -1,0 +1,99 @@
+@model List<HotelManagement.ViewModels.Admin.RoomTypeListItemViewModel>
+
+@{
+    ViewData["Title"] = "Quản lý loại phòng";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="page-title mb-0">Quản lý loại phòng</h2>
+
+    <a asp-controller="Admin"
+       asp-action="CreateRoomType"
+       class="btn btn-primary">
+        Thêm loại phòng
+    </a>
+</div>
+
+<div class="card card-dashboard">
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info mb-0">
+                Chưa có loại phòng nào.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Tên loại</th>
+                            <th>Giá</th>
+                            <th>Sức chứa</th>
+                            <th>Loại giường</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@item.Name</div>
+                                    <div class="text-muted small">
+                                        @item.Description
+                                    </div>
+                                </td>
+
+                                <td>@item.Price.ToString("N0") VNĐ</td>
+
+                                <td>@item.Capacity khách</td>
+
+                                <td>@item.BedType</td>
+
+                                <td>
+                                    @if (item.Status == "Active")
+                                    {
+                                        <span class="badge bg-success">Đang dùng</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Ngưng dùng</span>
+                                    }
+                                </td>
+
+                                <td class="text-end table-actions">
+                                    <a asp-controller="Admin"
+                                       asp-action="EditRoomType"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-outline-primary">
+                                        Sửa
+                                    </a>
+
+                                    @if (item.Status == "Active")
+                                    {
+                                        <form asp-controller="Admin"
+                                              asp-action="DeactivateRoomType"
+                                              asp-route-id="@item.Id"
+                                              method="post"
+                                              class="d-inline"
+                                              onsubmit="return confirm('Bạn có chắc muốn ngưng sử dụng loại phòng này?');">
+                                            @Html.AntiForgeryToken()
+
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                Ngưng dùng
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

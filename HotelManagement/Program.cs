@@ -1,15 +1,35 @@
 using HotelManagement.Data;
 using HotelManagement.Services;
+using HotelManagement.Services.Admin;
 using HotelManagement.Services.Customer;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+
+var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "SqlServer";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
 builder.Services.AddDbContext<HotelDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    if (databaseProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
+    {
+        var mySqlVersion = Version.Parse(builder.Configuration["MySql:Version"] ?? "8.0.0");
+        options.UseMySql(connectionString, new MySqlServerVersion(mySqlVersion));
+        return;
+    }
+
+    options.UseSqlServer(connectionString);
+});
 
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<AdminDashboardService>();
+builder.Services.AddScoped<RoomTypeManagementService>();
+builder.Services.AddScoped<RoomManagementService>();
 builder.Services.AddScoped<PublicHomeService>();
 builder.Services.AddScoped<PublicRoomService>();
 
@@ -51,10 +71,62 @@ app.MapControllerRoute(
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<HotelDbContext>();
+    var configuredProvider = scope.ServiceProvider
+        .GetRequiredService<IConfiguration>()["DatabaseProvider"] ?? "SqlServer";
 
-    context.Database.Migrate();
+    if (configuredProvider.Equals("MySql", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Database.EnsureCreated();
+
+        if (!TableExists(context, "Users"))
+        {
+            var databaseCreator = context.GetService<IRelationalDatabaseCreator>();
+            databaseCreator.CreateTables();
+        }
+    }
+    else
+    {
+        context.Database.Migrate();
+    }
 
     SeedData.Initialize(context);
 }
+static bool TableExists(HotelDbContext context, string tableName)
+{
+    var connection = context.Database.GetDbConnection();
+    var shouldClose = connection.State == System.Data.ConnectionState.Closed;
+
+    if (shouldClose)
+    {
+        connection.Open();
+    }
+
+    try
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT COUNT(*)
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+              AND LOWER(table_name) = LOWER(@tableName)
+            """;
+
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = "@tableName";
+        parameter.Value = tableName;
+        command.Parameters.Add(parameter);
+
+        var result = command.ExecuteScalar();
+        return Convert.ToInt32(result) > 0;
+    }
+    finally
+    {
+        if (shouldClose)
+        {
+            connection.Close();
+        }
+    }
+}
+
 
 app.Run();

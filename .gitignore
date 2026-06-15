@@ -32,6 +32,10 @@ appsettings.*.Local.json
 *.tmp
 *.temp
 
+## Uploaded room images
+HotelManagement/wwwroot/images/rooms/*
+!HotelManagement/wwwroot/images/rooms/.gitkeep
+
 ## OS files
 .DS_Store
 Thumbs.db

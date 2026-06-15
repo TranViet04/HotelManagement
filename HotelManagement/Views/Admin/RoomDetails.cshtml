@@ -1,0 +1,217 @@
+@model HotelManagement.ViewModels.Admin.RoomDetailViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết phòng";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="page-title mb-0">Chi tiết phòng @Model.RoomNumber</h2>
+
+    <div class="d-flex gap-2">
+        <a asp-controller="Admin"
+           asp-action="EditRoom"
+           asp-route-id="@Model.Id"
+           class="btn btn-primary">
+            Sửa phòng
+        </a>
+
+        <a asp-controller="Admin"
+           asp-action="Rooms"
+           class="btn btn-secondary">
+            Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card card-dashboard mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Thông tin phòng</h5>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Số phòng</div>
+                    <div class="col-md-8 fw-semibold">@Model.RoomNumber</div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Loại phòng</div>
+                    <div class="col-md-8">@Model.RoomTypeName</div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Giá mỗi đêm</div>
+                    <div class="col-md-8">@Model.RoomTypePrice.ToString("N0") VNĐ</div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Sức chứa</div>
+                    <div class="col-md-8">@Model.RoomTypeCapacity khách</div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Loại giường</div>
+                    <div class="col-md-8">@(string.IsNullOrWhiteSpace(Model.BedType) ? "-" : Model.BedType)</div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Tầng</div>
+                    <div class="col-md-8">@(Model.Floor.HasValue ? Model.Floor.Value.ToString() : "-")</div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Trạng thái</div>
+                    <div class="col-md-8">
+                        @if (Model.Status == "Available")
+                        {
+                            <span class="badge bg-success">Trống</span>
+                        }
+                        else if (Model.Status == "Occupied")
+                        {
+                            <span class="badge bg-primary">Đang sử dụng</span>
+                        }
+                        else if (Model.Status == "Cleaning")
+                        {
+                            <span class="badge bg-warning text-dark">Đang dọn</span>
+                        }
+                        else if (Model.Status == "Maintenance")
+                        {
+                            <span class="badge bg-danger">Bảo trì</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Ngưng dùng</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Ghi chú</div>
+                    <div class="col-md-8">
+                        @(string.IsNullOrWhiteSpace(Model.Note) ? "-" : Model.Note)
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Ngày tạo</div>
+                    <div class="col-md-8">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 text-muted">Cập nhật lần cuối</div>
+                    <div class="col-md-8">
+                        @(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm") : "-")
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-dashboard">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Lịch sử đặt phòng gần đây</h5>
+
+                @if (!Model.RecentBookings.Any())
+                {
+                    <div class="alert alert-info mb-0">
+                        Phòng này chưa có booking nào.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Mã booking</th>
+                                    <th>Khách hàng</th>
+                                    <th>Ngày nhận</th>
+                                    <th>Ngày trả</th>
+                                    <th>Trạng thái</th>
+                                    <th class="text-end">Tổng tiền</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach (var booking in Model.RecentBookings)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@booking.BookingCode</td>
+                                        <td>@booking.CustomerName</td>
+                                        <td>@booking.CheckInDate.ToString("dd/MM/yyyy")</td>
+                                        <td>@booking.CheckOutDate.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            <span class="badge bg-secondary">@booking.Status</span>
+                                        </td>
+                                        <td class="text-end">
+                                            @booking.TotalAmount.ToString("N0") VNĐ
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card card-dashboard">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Hình ảnh phòng</h5>
+
+                @if (!Model.Images.Any())
+                {
+                    <div class="alert alert-secondary mb-0">
+                        Phòng này chưa có hình ảnh.
+                    </div>
+                }
+                else
+                {
+                    var mainImage = Model.Images.FirstOrDefault(i => i.IsMain) ?? Model.Images.First();
+
+                    <div class="mb-3">
+                        <img src="@mainImage.ImageUrl"
+                             alt="Ảnh chính phòng @Model.RoomNumber"
+                             class="img-fluid rounded"
+                             style="width: 100%; height: 260px; object-fit: cover;" />
+
+                        @if (mainImage.IsMain)
+                        {
+                            <div class="mt-2">
+                                <span class="badge bg-success">Ảnh chính</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="row g-2">
+                        @foreach (var image in Model.Images)
+                        {
+                            <div class="col-4">
+                                <img src="@image.ImageUrl"
+                                     alt="Ảnh phòng @Model.RoomNumber"
+                                     class="img-fluid rounded border"
+                                     style="width: 100%; height: 80px; object-fit: cover;" />
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card card-dashboard mt-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Mô tả loại phòng</h5>
+
+                @if (string.IsNullOrWhiteSpace(Model.RoomTypeDescription))
+                {
+                    <div class="text-muted">Chưa có mô tả.</div>
+                }
+                else
+                {
+                    <p class="mb-0">@Model.RoomTypeDescription</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
