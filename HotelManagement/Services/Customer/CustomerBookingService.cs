@@ -239,6 +239,78 @@ namespace HotelManagement.Services.Customer
             return bookings;
         }
 
+        public async Task<BookingDetailViewModel?> GetMyBookingDetailAsync(long bookingId, long customerId)
+        {
+            var booking = await _context.Bookings
+                .AsNoTracking()
+                .Include(b => b.Customer)
+                .Include(b => b.Room)
+                    .ThenInclude(r => r!.RoomType)
+                .Include(b => b.BookingServices)
+                    .ThenInclude(bs => bs.Service)
+                .FirstOrDefaultAsync(b => b.Id == bookingId && b.CustomerId == customerId);
+
+            if (booking == null)
+            {
+                return null;
+            }
+
+            var cancellableStatuses = new[]
+            {
+                BookingStatuses.Pending,
+                BookingStatuses.Confirmed
+            };
+
+            return new BookingDetailViewModel
+            {
+                BookingId = booking.Id,
+                BookingCode = booking.BookingCode,
+                CustomerName = booking.Customer?.FullName ?? "Không xác định",
+                CustomerEmail = booking.Customer?.Email,
+                CustomerPhoneNumber = booking.Customer?.PhoneNumber,
+                RoomId = booking.RoomId,
+                RoomNumber = booking.Room?.RoomNumber ?? "Không xác định",
+                Floor = booking.Room?.Floor,
+                RoomTypeName = booking.Room?.RoomType?.Name ?? "Không xác định",
+                RoomDescription = booking.Room?.RoomType?.Description,
+                PricePerNight = booking.Room?.RoomType?.Price ?? 0,
+                Capacity = booking.Room?.RoomType?.Capacity ?? 0,
+                BedType = booking.Room?.RoomType?.BedType,
+                ThumbnailUrl = booking.Room?.RoomType?.ThumbnailUrl,
+                CheckInDate = booking.CheckInDate,
+                CheckOutDate = booking.CheckOutDate,
+                Nights = Math.Max(0, (booking.CheckOutDate.Date - booking.CheckInDate.Date).Days),
+                Adults = booking.Adults,
+                Children = booking.Children,
+                Status = booking.Status,
+                TotalRoomAmount = booking.TotalRoomAmount,
+                TotalServiceAmount = booking.TotalServiceAmount,
+                TotalAmount = booking.TotalAmount,
+                SpecialRequest = booking.SpecialRequest,
+                CancelReason = booking.CancelReason,
+                ConfirmedAt = booking.ConfirmedAt,
+                CheckedInAt = booking.CheckedInAt,
+                CheckedOutAt = booking.CheckedOutAt,
+                CancelledAt = booking.CancelledAt,
+                CreatedAt = booking.CreatedAt,
+                CanCancel = cancellableStatuses.Contains(booking.Status),
+                Services = booking.BookingServices
+                    .OrderByDescending(bs => bs.UsedAt)
+                    .Select(bs => new BookingServiceItemViewModel
+                    {
+                        ServiceName = bs.Service?.Name ?? "Dịch vụ không xác định",
+                        Category = bs.Service?.Category,
+                        Unit = bs.Service?.Unit,
+                        Quantity = bs.Quantity,
+                        UnitPrice = bs.UnitPrice,
+                        TotalPrice = bs.TotalPrice,
+                        UsedAt = bs.UsedAt,
+                        Note = bs.Note
+                    })
+                    .ToList()
+            };
+        }
+
         private async Task<bool> IsRoomAvailableAsync(long roomId, DateTime checkInDate, DateTime checkOutDate)
         {
             var unavailableBookingStatuses = new[]

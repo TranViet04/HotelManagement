@@ -116,9 +116,22 @@ namespace HotelManagement.Controllers
         }
 
         [HttpGet]
-        public IActionResult Details(long id)
+        public async Task<IActionResult> Details(long id)
         {
-            return View("Placeholder", $"Chi tiết đặt phòng #{id}");
+            if (!TryGetCurrentUserId(out var customerId))
+            {
+                return Challenge();
+            }
+
+            var booking = await _customerBookingService.GetMyBookingDetailAsync(id, customerId);
+
+            if (booking == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy đặt phòng hoặc bạn không có quyền xem đặt phòng này.";
+                return RedirectToAction(nameof(MyBookings));
+            }
+
+            return View(booking);
         }
 
         private bool TryGetCurrentUserId(out long userId)
