@@ -9,10 +9,14 @@ namespace HotelManagement.Controllers
     public class ReceptionistController : Controller
     {
         private readonly ReceptionistDashboardService _dashboardService;
+        private readonly ReceptionistBookingService _bookingService;
 
-        public ReceptionistController(ReceptionistDashboardService dashboardService)
+        public ReceptionistController(
+            ReceptionistDashboardService dashboardService,
+            ReceptionistBookingService bookingService)
         {
             _dashboardService = dashboardService;
+            _bookingService = bookingService;
         }
 
         public async Task<IActionResult> Dashboard()
@@ -21,9 +25,27 @@ namespace HotelManagement.Controllers
             return View(model);
         }
 
-        public IActionResult Bookings()
+        [HttpGet]
+        public async Task<IActionResult> Bookings(
+            string? keyword,
+            string? status,
+            DateTime? checkInFrom,
+            DateTime? checkInTo)
         {
-            return View("Placeholder", "Quản lý đặt phòng");
+            var model = await _bookingService.GetBookingsAsync(
+                keyword,
+                status,
+                checkInFrom,
+                checkInTo
+            );
+
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult BookingDetails(long id)
+        {
+            return View("Placeholder", $"Chi tiết booking #{id}");
         }
 
         public IActionResult CreateWalkInBooking()

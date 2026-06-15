@@ -228,3 +228,23 @@ body {
     flex-direction: column;
   }
 }
+
+.receptionist-bookings-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
+}
+
+.receptionist-bookings-table th {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.receptionist-bookings-table td {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.receptionist-bookings-table .badge {
+  font-size: 12px;
+  padding: 7px 10px;
+}

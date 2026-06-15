@@ -31,6 +31,7 @@ builder.Services.AddScoped<AdminDashboardService>();
 builder.Services.AddScoped<RoomTypeManagementService>();
 builder.Services.AddScoped<RoomManagementService>();
 builder.Services.AddScoped<ReceptionistDashboardService>();
+builder.Services.AddScoped<ReceptionistBookingService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
