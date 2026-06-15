@@ -1,40 +1,49 @@
 using HotelManagement.Constants;
+using HotelManagement.Services.Receptionist;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HotelManagement.Controllers
 {
-    [Authorize(Roles = UserRoles.Admin + "," + UserRoles.Receptionist)]
+    [Authorize(Roles = UserRoles.Receptionist)]
     public class ReceptionistController : Controller
     {
-        public IActionResult Dashboard()
+        private readonly ReceptionistDashboardService _dashboardService;
+
+        public ReceptionistController(ReceptionistDashboardService dashboardService)
         {
-            return View();
+            _dashboardService = dashboardService;
+        }
+
+        public async Task<IActionResult> Dashboard()
+        {
+            var model = await _dashboardService.GetDashboardAsync();
+            return View(model);
         }
 
         public IActionResult Bookings()
         {
-            return View("Placeholder", "Danh sách đặt phòng");
+            return View("Placeholder", "Quản lý đặt phòng");
         }
 
         public IActionResult CreateWalkInBooking()
         {
-            return View("Placeholder", "Tạo đặt phòng tại quầy");
+            return View("Placeholder", "Tạo đặt phòng trực tiếp");
         }
 
         public IActionResult TodayCheckIns()
         {
-            return View("Placeholder", "Khách nhận phòng hôm nay");
+            return View("Placeholder", "Danh sách khách nhận phòng hôm nay");
         }
 
         public IActionResult TodayCheckOuts()
         {
-            return View("Placeholder", "Khách trả phòng hôm nay");
+            return View("Placeholder", "Danh sách khách trả phòng hôm nay");
         }
 
         public IActionResult Rooms()
         {
-            return View("Placeholder", "Tình trạng phòng");
+            return View("Placeholder", "Theo dõi phòng");
         }
 
         public IActionResult BookingServices()

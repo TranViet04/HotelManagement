@@ -171,3 +171,60 @@ body {
     min-height: calc(100vh - 57px);
   }
 }
+
+.receptionist-dashboard-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
+}
+
+.receptionist-dashboard-table th {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.receptionist-dashboard-table td {
+  font-size: 14px;
+}
+
+.room-status-card {
+  min-height: 120px;
+}
+
+.room-status-summary-list {
+  display: grid;
+  gap: 10px;
+}
+
+.room-status-summary-item {
+  align-items: center;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.dashboard-booking-list {
+  display: grid;
+  gap: 10px;
+}
+
+.dashboard-booking-item {
+  align-items: center;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+@media (max-width: 575.98px) {
+  .dashboard-booking-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

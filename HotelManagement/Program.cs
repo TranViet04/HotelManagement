@@ -1,6 +1,7 @@
 using HotelManagement.Data;
 using HotelManagement.Services;
 using HotelManagement.Services.Admin;
+using HotelManagement.Services.Receptionist;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -29,6 +30,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AdminDashboardService>();
 builder.Services.AddScoped<RoomTypeManagementService>();
 builder.Services.AddScoped<RoomManagementService>();
+builder.Services.AddScoped<ReceptionistDashboardService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
