@@ -16,6 +16,8 @@ namespace HotelManagement.Data
 
         public DbSet<Room> Rooms { get; set; }
 
+        public DbSet<RoomImage> RoomImages { get; set; }
+
         public DbSet<Booking> Bookings { get; set; }
 
         public DbSet<Service> Services { get; set; }
@@ -35,6 +37,7 @@ namespace HotelManagement.Data
             ConfigureUser(modelBuilder);
             ConfigureRoomType(modelBuilder);
             ConfigureRoom(modelBuilder);
+            ConfigureRoomImage(modelBuilder);
             ConfigureBooking(modelBuilder);
             ConfigureService(modelBuilder);
             ConfigureBookingService(modelBuilder);
@@ -174,6 +177,26 @@ namespace HotelManagement.Data
                     .WithMany(r => r.Bookings)
                     .HasForeignKey(b => b.RoomId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureRoomImage(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<RoomImage>(entity =>
+            {
+                entity.HasIndex(ri => ri.RoomId);
+
+                entity.Property(ri => ri.ImageUrl)
+                    .IsRequired()
+                    .HasMaxLength(500);
+
+                entity.Property(ri => ri.Caption)
+                    .HasMaxLength(255);
+
+                entity.HasOne(ri => ri.Room)
+                    .WithMany(r => r.RoomImages)
+                    .HasForeignKey(ri => ri.RoomId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
 
