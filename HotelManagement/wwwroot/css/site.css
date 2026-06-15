@@ -441,3 +441,21 @@ body {
   border-radius: 8px;
   background: linear-gradient(135deg, #ffffff 0%, #fff5f5 100%);
 }
+
+.customer-profile-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
+}
+
+.customer-profile-avatar {
+  align-items: center;
+  background-color: #2563eb;
+  border-radius: 999px;
+  color: #ffffff;
+  display: flex;
+  font-size: 32px;
+  font-weight: 700;
+  height: 72px;
+  justify-content: center;
+  width: 72px;
+}
