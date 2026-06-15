@@ -79,14 +79,38 @@ namespace HotelManagement.Controllers
             return RedirectToAction(nameof(BookingDetails), new { id });
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckInBooking(long id)
+        {
+            if (!TryGetCurrentUserId(out var receptionistId))
+            {
+                return Challenge();
+            }
+
+            var result = await _bookingService.CheckInBookingAsync(id, receptionistId);
+
+            if (!result.Succeeded)
+            {
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction(nameof(BookingDetails), new { id });
+            }
+
+            TempData["SuccessMessage"] = result.Message;
+
+            return RedirectToAction(nameof(BookingDetails), new { id });
+        }
+
         public IActionResult CreateWalkInBooking()
         {
             return View("Placeholder", "Tạo đặt phòng trực tiếp");
         }
 
-        public IActionResult TodayCheckIns()
+        [HttpGet]
+        public async Task<IActionResult> TodayCheckIns()
         {
-            return View("Placeholder", "Danh sách khách nhận phòng hôm nay");
+            var model = await _bookingService.GetTodayCheckInsAsync();
+            return View(model);
         }
 
         public IActionResult TodayCheckOuts()

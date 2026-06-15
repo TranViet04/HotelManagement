@@ -274,6 +274,30 @@
                             Không thể xác nhận
                         </button>
                     }
+
+                    @if (Model.CanCheckIn)
+                    {
+                        <form asp-controller="Receptionist"
+                              asp-action="CheckInBooking"
+                              asp-route-id="@Model.BookingId"
+                              method="post"
+                              class="d-inline">
+                            @Html.AntiForgeryToken()
+
+                            <button type="submit" class="btn btn-success">
+                                Check-in
+                            </button>
+                        </form>
+                    }
+                    else if (Model.Status == "Confirmed")
+                    {
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                disabled
+                                title="@Model.CheckInBlockReason">
+                            Chưa thể check-in
+                        </button>
+                    }
                 </div>
             </div>
         </div>

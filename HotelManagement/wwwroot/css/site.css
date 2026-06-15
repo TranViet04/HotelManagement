@@ -333,3 +333,23 @@ body {
         text-align: left;
     }
 }
+
+.receptionist-checkin-header {
+    border-radius: 8px;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fff4 100%);
+}
+
+.receptionist-checkin-table th {
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.receptionist-checkin-table td {
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.receptionist-checkin-table .badge {
+    font-size: 12px;
+    padding: 7px 10px;
+}

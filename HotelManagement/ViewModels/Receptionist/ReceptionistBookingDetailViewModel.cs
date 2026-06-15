@@ -67,5 +67,9 @@ namespace HotelManagement.ViewModels.Receptionist
         public bool CanConfirm { get; set; }
 
         public string? ConfirmBlockReason { get; set; }
+
+        public bool CanCheckIn { get; set; }
+
+        public string? CheckInBlockReason { get; set; }
     }
 }
