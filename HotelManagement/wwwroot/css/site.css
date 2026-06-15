@@ -312,3 +312,23 @@ body {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
 }
+
+.my-bookings-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
+}
+
+.my-bookings-table th {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.my-bookings-table td {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.my-bookings-table .badge {
+  font-size: 12px;
+  padding: 7px 10px;
+}

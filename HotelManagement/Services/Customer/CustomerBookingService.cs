@@ -198,6 +198,47 @@ namespace HotelManagement.Services.Customer
             return CustomerBookingResult.Success(booking.Id, booking.BookingCode);
         }
 
+        public async Task<List<MyBookingListItemViewModel>> GetMyBookingsAsync(long customerId)
+        {
+            var cancellableStatuses = new[]
+            {
+                BookingStatuses.Pending,
+                BookingStatuses.Confirmed
+            };
+
+            var bookings = await _context.Bookings
+                .AsNoTracking()
+                .Include(b => b.Room)
+                    .ThenInclude(r => r!.RoomType)
+                .Where(b => b.CustomerId == customerId)
+                .OrderByDescending(b => b.CreatedAt)
+                .Select(b => new MyBookingListItemViewModel
+                {
+                    BookingId = b.Id,
+                    BookingCode = b.BookingCode,
+                    RoomNumber = b.Room != null ? b.Room.RoomNumber : "Không xác định",
+                    RoomTypeName = b.Room != null && b.Room.RoomType != null
+                        ? b.Room.RoomType.Name
+                        : "Không xác định",
+                    CheckInDate = b.CheckInDate,
+                    CheckOutDate = b.CheckOutDate,
+                    Adults = b.Adults,
+                    Children = b.Children,
+                    TotalAmount = b.TotalAmount,
+                    Status = b.Status,
+                    CreatedAt = b.CreatedAt,
+                    CanCancel = cancellableStatuses.Contains(b.Status)
+                })
+                .ToListAsync();
+
+            foreach (var booking in bookings)
+            {
+                booking.Nights = Math.Max(0, (booking.CheckOutDate.Date - booking.CheckInDate.Date).Days);
+            }
+
+            return bookings;
+        }
+
         private async Task<bool> IsRoomAvailableAsync(long roomId, DateTime checkInDate, DateTime checkOutDate)
         {
             var unavailableBookingStatuses = new[]

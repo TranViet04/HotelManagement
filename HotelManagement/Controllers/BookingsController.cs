@@ -103,9 +103,22 @@ namespace HotelManagement.Controllers
         }
 
         [HttpGet]
-        public IActionResult MyBookings()
+        public async Task<IActionResult> MyBookings()
         {
-            return View("Placeholder", "Lịch sử đặt phòng");
+            if (!TryGetCurrentUserId(out var customerId))
+            {
+                return Challenge();
+            }
+
+            var bookings = await _customerBookingService.GetMyBookingsAsync(customerId);
+
+            return View(bookings);
+        }
+
+        [HttpGet]
+        public IActionResult Details(long id)
+        {
+            return View("Placeholder", $"Chi tiết đặt phòng #{id}");
         }
 
         private bool TryGetCurrentUserId(out long userId)

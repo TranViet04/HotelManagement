@@ -1,0 +1,190 @@
+@model List<HotelManagement.ViewModels.Customer.MyBookingListItemViewModel>
+
+@{
+    ViewData["Title"] = "Lịch sử đặt phòng";
+
+    string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Pending" => "bg-warning text-dark",
+            "Confirmed" => "bg-primary",
+            "CheckedIn" => "bg-info text-dark",
+            "CheckedOut" => "bg-success",
+            "Cancelled" => "bg-secondary",
+            _ => "bg-light text-dark"
+        };
+    }
+
+    string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Pending" => "Chờ xác nhận",
+            "Confirmed" => "Đã xác nhận",
+            "CheckedIn" => "Đã nhận phòng",
+            "CheckedOut" => "Đã trả phòng",
+            "Cancelled" => "Đã hủy",
+            _ => status
+        };
+    }
+}
+
+<section class="my-bookings-header shadow-sm p-4 p-lg-5 mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <div class="text-uppercase text-primary fw-semibold mb-2">
+                Lịch sử đặt phòng
+            </div>
+
+            <h1 class="fw-bold mb-3">
+                Các đặt phòng của tôi
+            </h1>
+
+            <p class="text-muted mb-0">
+                Theo dõi trạng thái đặt phòng, thời gian lưu trú và tổng chi phí dự kiến.
+            </p>
+        </div>
+
+        <div class="col-lg-4 text-lg-end">
+            <a asp-controller="Rooms" asp-action="Search" class="btn btn-primary btn-lg">
+                Tìm phòng mới
+            </a>
+        </div>
+    </div>
+</section>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-5 text-center">
+            <h4 class="fw-bold mb-3">Bạn chưa có đặt phòng nào</h4>
+
+            <p class="text-muted mb-4">
+                Hãy tìm phòng phù hợp và gửi yêu cầu đặt phòng trực tuyến.
+            </p>
+
+            <a asp-controller="Rooms" asp-action="Search" class="btn btn-primary">
+                Tìm phòng ngay
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 my-bookings-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã đặt phòng</th>
+                            <th>Phòng</th>
+                            <th>Thời gian</th>
+                            <th>Số khách</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var booking in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">
+                                        @booking.BookingCode
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold">
+                                        @booking.RoomTypeName
+                                    </div>
+
+                                    <div class="text-muted small">
+                                        Phòng @booking.RoomNumber
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div>
+                                        @booking.CheckInDate.ToString("dd/MM/yyyy")
+                                        -
+                                        @booking.CheckOutDate.ToString("dd/MM/yyyy")
+                                    </div>
+
+                                    <div class="text-muted small">
+                                        @booking.Nights đêm
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div>
+                                        @booking.Adults người lớn
+                                    </div>
+
+                                    @if (booking.Children > 0)
+                                    {
+                                        <div class="text-muted small">
+                                            @booking.Children trẻ em
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted small">
+                                            Không có trẻ em
+                                        </div>
+                                    }
+                                </td>
+
+                                <td>
+                                    <strong class="text-primary">
+                                        @booking.TotalAmount.ToString("N0") VND
+                                    </strong>
+                                </td>
+
+                                <td>
+                                    <span class="badge @GetStatusBadgeClass(booking.Status)">
+                                        @GetStatusText(booking.Status)
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div>
+                                        @booking.CreatedAt.ToString("dd/MM/yyyy")
+                                    </div>
+
+                                    <div class="text-muted small">
+                                        @booking.CreatedAt.ToString("HH:mm")
+                                    </div>
+                                </td>
+
+                                <td class="text-end table-actions">
+                                    <a asp-controller="Bookings"
+                                       asp-action="Details"
+                                       asp-route-id="@booking.BookingId"
+                                       class="btn btn-outline-primary btn-sm">
+                                        Xem chi tiết
+                                    </a>
+
+                                    @if (booking.CanCancel)
+                                    {
+                                        <button type="button"
+                                                class="btn btn-outline-danger btn-sm"
+                                                disabled
+                                                title="Chức năng hủy sẽ được làm ở Customer-M8">
+                                            Hủy
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
