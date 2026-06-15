@@ -50,9 +50,29 @@ namespace HotelManagement.Controllers
             return View(model);
         }
 
-        public IActionResult Details(long id)
+        [HttpGet]
+        public async Task<IActionResult> Details(
+            long id,
+            DateTime? checkInDate,
+            DateTime? checkOutDate,
+            int adults = 1,
+            int children = 0)
         {
-            return View("Placeholder", $"Chi tiết loại phòng #{id}");
+            var model = await _publicRoomService.GetRoomDetailAsync(
+                id,
+                checkInDate,
+                checkOutDate,
+                adults,
+                children
+            );
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy loại phòng hoặc loại phòng không còn hoạt động.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(model);
         }
     }
 }
