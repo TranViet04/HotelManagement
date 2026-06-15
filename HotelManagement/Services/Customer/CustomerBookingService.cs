@@ -255,12 +255,6 @@ namespace HotelManagement.Services.Customer
                 return null;
             }
 
-            var cancellableStatuses = new[]
-            {
-                BookingStatuses.Pending,
-                BookingStatuses.Confirmed
-            };
-
             return new BookingDetailViewModel
             {
                 BookingId = booking.Id,
@@ -293,7 +287,7 @@ namespace HotelManagement.Services.Customer
                 CheckedOutAt = booking.CheckedOutAt,
                 CancelledAt = booking.CancelledAt,
                 CreatedAt = booking.CreatedAt,
-                CanCancel = cancellableStatuses.Contains(booking.Status),
+                CanCancel = CanCancelBookingStatus(booking.Status),
                 Services = booking.BookingServices
                     .OrderByDescending(bs => bs.UsedAt)
                     .Select(bs => new BookingServiceItemViewModel
@@ -309,6 +303,91 @@ namespace HotelManagement.Services.Customer
                     })
                     .ToList()
             };
+        }
+
+        public async Task<CancelBookingViewModel?> PrepareCancelBookingAsync(long bookingId, long customerId)
+        {
+            var booking = await _context.Bookings
+                .AsNoTracking()
+                .Include(b => b.Room)
+                    .ThenInclude(r => r!.RoomType)
+                .FirstOrDefaultAsync(b => b.Id == bookingId && b.CustomerId == customerId);
+
+            if (booking == null)
+            {
+                return null;
+            }
+
+            var canCancel = CanCancelBookingStatus(booking.Status);
+
+            return new CancelBookingViewModel
+            {
+                BookingId = booking.Id,
+                BookingCode = booking.BookingCode,
+                RoomNumber = booking.Room?.RoomNumber ?? "Không xác định",
+                RoomTypeName = booking.Room?.RoomType?.Name ?? "Không xác định",
+                CheckInDate = booking.CheckInDate,
+                CheckOutDate = booking.CheckOutDate,
+                Nights = Math.Max(0, (booking.CheckOutDate.Date - booking.CheckInDate.Date).Days),
+                Adults = booking.Adults,
+                Children = booking.Children,
+                TotalAmount = booking.TotalAmount,
+                Status = booking.Status,
+                CanCancel = canCancel,
+                CancelBlockReason = canCancel
+                    ? null
+                    : "Chỉ có thể hủy đặt phòng ở trạng thái Chờ xác nhận hoặc Đã xác nhận."
+            };
+        }
+
+        public async Task<CustomerBookingResult> CancelMyBookingAsync(
+            long bookingId,
+            long customerId,
+            string? cancelReason)
+        {
+            var booking = await _context.Bookings
+                .FirstOrDefaultAsync(b => b.Id == bookingId && b.CustomerId == customerId);
+
+            if (booking == null)
+            {
+                return CustomerBookingResult.Failure("Không tìm thấy đặt phòng hoặc bạn không có quyền hủy đặt phòng này.");
+            }
+
+            if (!CanCancelBookingStatus(booking.Status))
+            {
+                return CustomerBookingResult.Failure("Đặt phòng này không còn được phép hủy.");
+            }
+
+            if (string.IsNullOrWhiteSpace(cancelReason))
+            {
+                return CustomerBookingResult.Failure("Vui lòng nhập lý do hủy đặt phòng.");
+            }
+
+            cancelReason = cancelReason.Trim();
+
+            if (cancelReason.Length > 500)
+            {
+                return CustomerBookingResult.Failure("Lý do hủy tối đa 500 ký tự.");
+            }
+
+            booking.Status = BookingStatuses.Cancelled;
+            booking.CancelReason = cancelReason;
+            booking.CancelledAt = DateTime.Now;
+            booking.UpdatedAt = DateTime.Now;
+
+            _context.ActivityLogs.Add(new ActivityLog
+            {
+                UserId = customerId,
+                Action = "CancelBooking",
+                EntityName = "Booking",
+                EntityId = booking.Id,
+                Description = $"Customer hủy booking {booking.BookingCode}. Lý do: {cancelReason}",
+                CreatedAt = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
+
+            return CustomerBookingResult.Success(booking.Id, booking.BookingCode);
         }
 
         private async Task<bool> IsRoomAvailableAsync(long roomId, DateTime checkInDate, DateTime checkOutDate)
@@ -329,6 +408,12 @@ namespace HotelManagement.Services.Customer
                 );
 
             return !hasOverlappingBooking;
+        }
+
+        private static bool CanCancelBookingStatus(string status)
+        {
+            return status == BookingStatuses.Pending
+                || status == BookingStatuses.Confirmed;
         }
 
         private async Task<string> GenerateBookingCodeAsync()

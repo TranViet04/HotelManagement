@@ -347,12 +347,12 @@
 
                     @if (Model.CanCancel)
                     {
-                        <button type="button"
-                                class="btn btn-outline-danger"
-                                disabled
-                                title="Chức năng hủy sẽ được làm ở Customer-M8">
+                        <a asp-controller="Bookings"
+                           asp-action="Cancel"
+                           asp-route-id="@Model.BookingId"
+                           class="btn btn-outline-danger">
                             Hủy đặt phòng
-                        </button>
+                        </a>
                     }
                 </div>
             </div>

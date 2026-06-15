@@ -134,6 +134,88 @@ namespace HotelManagement.Controllers
             return View(booking);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Cancel(long id)
+        {
+            if (!TryGetCurrentUserId(out var customerId))
+            {
+                return Challenge();
+            }
+
+            var model = await _customerBookingService.PrepareCancelBookingAsync(id, customerId);
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy đặt phòng hoặc bạn không có quyền hủy đặt phòng này.";
+                return RedirectToAction(nameof(MyBookings));
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(CancelBookingViewModel model)
+        {
+            if (!TryGetCurrentUserId(out var customerId))
+            {
+                return Challenge();
+            }
+
+            var displayModel = await _customerBookingService.PrepareCancelBookingAsync(
+                model.BookingId,
+                customerId
+            );
+
+            if (displayModel == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy đặt phòng hoặc bạn không có quyền hủy đặt phòng này.";
+                return RedirectToAction(nameof(MyBookings));
+            }
+
+            displayModel.CancelReason = model.CancelReason;
+
+            if (!displayModel.CanCancel)
+            {
+                TempData["ErrorMessage"] = displayModel.CancelBlockReason;
+                return RedirectToAction(nameof(Details), new { id = model.BookingId });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(displayModel);
+            }
+
+            var result = await _customerBookingService.CancelMyBookingAsync(
+                model.BookingId,
+                customerId,
+                model.CancelReason
+            );
+
+            if (!result.Succeeded)
+            {
+                ModelState.AddModelError(string.Empty, result.Message);
+
+                displayModel = await _customerBookingService.PrepareCancelBookingAsync(
+                    model.BookingId,
+                    customerId
+                );
+
+                if (displayModel == null)
+                {
+                    TempData["ErrorMessage"] = result.Message;
+                    return RedirectToAction(nameof(MyBookings));
+                }
+
+                displayModel.CancelReason = model.CancelReason;
+                return View(displayModel);
+            }
+
+            TempData["SuccessMessage"] = $"Đã hủy đặt phòng {result.BookingCode} thành công.";
+
+            return RedirectToAction(nameof(MyBookings));
+        }
+
         private bool TryGetCurrentUserId(out long userId)
         {
             userId = 0;

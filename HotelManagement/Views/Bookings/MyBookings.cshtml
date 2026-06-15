@@ -172,12 +172,12 @@ else
 
                                     @if (booking.CanCancel)
                                     {
-                                        <button type="button"
-                                                class="btn btn-outline-danger btn-sm"
-                                                disabled
-                                                title="Chức năng hủy sẽ được làm ở Customer-M8">
+                                        <a asp-controller="Bookings"
+                                           asp-action="Cancel"
+                                           asp-route-id="@booking.BookingId"
+                                           class="btn btn-outline-danger btn-sm">
                                             Hủy
-                                        </button>
+                                        </a>
                                     }
                                 </td>
                             </tr>
