@@ -1,5 +1,6 @@
 using HotelManagement.Data;
 using HotelManagement.Services;
+using HotelManagement.Services.Customer;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +10,7 @@ builder.Services.AddDbContext<HotelDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<PublicHomeService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

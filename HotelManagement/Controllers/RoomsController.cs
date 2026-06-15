@@ -13,5 +13,10 @@ namespace HotelManagement.Controllers
         {
             return View("Placeholder", "Tìm phòng trống");
         }
+
+        public IActionResult Details(long id)
+        {
+            return View("Placeholder", $"Chi tiết loại phòng #{id}");
+        }
     }
 }
