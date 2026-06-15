@@ -222,3 +222,17 @@ body {
   border-top: 1px solid #e5e7eb;
   padding-top: 12px;
 }
+
+.search-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #eef8ff 100%);
+}
+
+.search-room-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12) !important;
+}
