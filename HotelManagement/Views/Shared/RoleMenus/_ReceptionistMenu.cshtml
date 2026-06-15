@@ -1,0 +1,75 @@
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+
+    string Active(string controller, string action)
+    {
+        return currentController == controller && currentAction == action
+            ? "active"
+            : "";
+    }
+}
+
+<nav class="sidebar-menu">
+    <div class="sidebar-section">Tổng quan</div>
+
+    <a class="sidebar-link @Active("Receptionist", "Dashboard")"
+       asp-controller="Receptionist"
+       asp-action="Dashboard">
+        Dashboard lễ tân
+    </a>
+
+    <div class="sidebar-section">Đặt phòng</div>
+
+    <a class="sidebar-link @Active("Receptionist", "Bookings")"
+       asp-controller="Receptionist"
+       asp-action="Bookings">
+        Danh sách đặt phòng
+    </a>
+
+    <a class="sidebar-link @Active("Receptionist", "CreateWalkInBooking")"
+       asp-controller="Receptionist"
+       asp-action="CreateWalkInBooking">
+        Tạo đặt phòng tại quầy
+    </a>
+
+    <a class="sidebar-link @Active("Receptionist", "TodayCheckIns")"
+       asp-controller="Receptionist"
+       asp-action="TodayCheckIns">
+        Khách nhận phòng hôm nay
+    </a>
+
+    <a class="sidebar-link @Active("Receptionist", "TodayCheckOuts")"
+       asp-controller="Receptionist"
+       asp-action="TodayCheckOuts">
+        Khách trả phòng hôm nay
+    </a>
+
+    <div class="sidebar-section">Vận hành</div>
+
+    <a class="sidebar-link @Active("Receptionist", "Rooms")"
+       asp-controller="Receptionist"
+       asp-action="Rooms">
+        Tình trạng phòng
+    </a>
+
+    <a class="sidebar-link @Active("Receptionist", "BookingServices")"
+       asp-controller="Receptionist"
+       asp-action="BookingServices">
+        Dịch vụ phát sinh
+    </a>
+
+    <div class="sidebar-section">Thanh toán</div>
+
+    <a class="sidebar-link @Active("Receptionist", "Invoices")"
+       asp-controller="Receptionist"
+       asp-action="Invoices">
+        Hóa đơn
+    </a>
+
+    <a class="sidebar-link @Active("Receptionist", "Payments")"
+       asp-controller="Receptionist"
+       asp-action="Payments">
+        Thanh toán
+    </a>
+</nav>

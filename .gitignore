@@ -1,0 +1,37 @@
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+
+## .NET
+TestResults/
+*.nupkg
+*.snupkg
+project.lock.json
+project.assets.json
+artifacts/
+
+## ASP.NET
+appsettings.Local.json
+appsettings.*.Local.json
+
+## Logs and temp files
+*.log
+*.tmp
+*.temp
+
+## OS files
+.DS_Store
+Thumbs.db

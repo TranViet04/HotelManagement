@@ -1,0 +1,55 @@
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+
+    string Active(string controller, string action)
+    {
+        return currentController == controller && currentAction == action
+            ? "active"
+            : "";
+    }
+}
+
+<nav class="sidebar-menu">
+    <div class="sidebar-section">Khách hàng</div>
+
+    <a class="sidebar-link @Active("Home", "Index")"
+       asp-controller="Home"
+       asp-action="Index">
+        Trang chủ
+    </a>
+
+    <a class="sidebar-link @Active("Rooms", "Index")"
+       asp-controller="Rooms"
+       asp-action="Index">
+        Danh sách phòng
+    </a>
+
+    <a class="sidebar-link @Active("Rooms", "Search")"
+       asp-controller="Rooms"
+       asp-action="Search">
+        Tìm phòng trống
+    </a>
+
+    <div class="sidebar-section">Đặt phòng của tôi</div>
+
+    <a class="sidebar-link @Active("Bookings", "MyBookings")"
+       asp-controller="Bookings"
+       asp-action="MyBookings">
+        Lịch sử đặt phòng
+    </a>
+
+    <a class="sidebar-link @Active("Bookings", "Create")"
+       asp-controller="Bookings"
+       asp-action="Create">
+        Tạo đặt phòng
+    </a>
+
+    <div class="sidebar-section">Tài khoản</div>
+
+    <a class="sidebar-link @Active("Customer", "Profile")"
+       asp-controller="Customer"
+       asp-action="Profile">
+        Thông tin cá nhân
+    </a>
+</nav>

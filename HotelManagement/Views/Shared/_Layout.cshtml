@@ -1,0 +1,236 @@
+@{
+    var isAuthenticated = User.Identity != null && User.Identity.IsAuthenticated;
+
+    var roleTitle = "Khách";
+    var roleBadgeClass = "bg-secondary";
+
+    if (User.IsInRole("Admin"))
+    {
+        roleTitle = "Quản trị viên";
+        roleBadgeClass = "bg-danger";
+    }
+    else if (User.IsInRole("Receptionist"))
+    {
+        roleTitle = "Lễ tân";
+        roleBadgeClass = "bg-primary";
+    }
+    else if (User.IsInRole("Customer"))
+    {
+        roleTitle = "Khách hàng";
+        roleBadgeClass = "bg-success";
+    }
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>@ViewData["Title"] - HotelManagement</title>
+
+    <script type="importmap"></script>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/HotelManagement.styles.css" asp-append-version="true" />
+</head>
+
+<body>
+    <header class="app-topbar">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
+            <div class="container-fluid">
+                @if (isAuthenticated)
+                {
+                    <button class="btn btn-outline-secondary d-lg-none me-2"
+                            type="button"
+                            data-bs-toggle="offcanvas"
+                            data-bs-target="#mobileSidebar"
+                            aria-controls="mobileSidebar">
+                        Menu
+                    </button>
+                }
+
+                <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">
+                    HotelManagement
+                </a>
+
+                <button class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#topNavbar"
+                        aria-controls="topNavbar"
+                        aria-expanded="false"
+                        aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="topNavbar">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        @if (!isAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Home" asp-action="Index">
+                                    Trang chủ
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Rooms" asp-action="Index">
+                                    Phòng
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Rooms" asp-action="Search">
+                                    Tìm phòng
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Home" asp-action="Privacy">
+                                    Liên hệ
+                                </a>
+                            </li>
+                        }
+                    </ul>
+
+                    <ul class="navbar-nav ms-auto">
+                        @if (isAuthenticated)
+                        {
+                            <li class="nav-item d-flex align-items-center me-2">
+                                <span class="badge @roleBadgeClass">
+                                    @roleTitle
+                                </span>
+                            </li>
+
+                            <li class="nav-item">
+                                <span class="nav-link text-dark">
+                                    Xin chào, @User.Identity!.Name
+                                </span>
+                            </li>
+
+                            <li class="nav-item">
+                                <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-link nav-link text-dark">
+                                        Đăng xuất
+                                    </button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Auth" asp-action="Login">
+                                    Đăng nhập
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="btn btn-primary ms-lg-2" asp-controller="Auth" asp-action="Register">
+                                    Đăng ký
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    @if (isAuthenticated)
+    {
+        <div class="offcanvas offcanvas-start app-mobile-sidebar"
+             tabindex="-1"
+             id="mobileSidebar"
+             aria-labelledby="mobileSidebarLabel">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="mobileSidebarLabel">
+                    @roleTitle
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="offcanvas"
+                        aria-label="Close">
+                </button>
+            </div>
+
+            <div class="offcanvas-body p-0">
+                @if (User.IsInRole("Admin"))
+                {
+                    @await Html.PartialAsync("~/Views/Shared/RoleMenus/_AdminMenu.cshtml")
+                }
+                else if (User.IsInRole("Receptionist"))
+                {
+                    @await Html.PartialAsync("~/Views/Shared/RoleMenus/_ReceptionistMenu.cshtml")
+                }
+                else if (User.IsInRole("Customer"))
+                {
+                    @await Html.PartialAsync("~/Views/Shared/RoleMenus/_CustomerMenu.cshtml")
+                }
+            </div>
+        </div>
+    }
+
+    <div class="app-shell">
+        @if (isAuthenticated)
+        {
+            <aside class="app-sidebar d-none d-lg-block">
+                <div class="sidebar-header">
+                    <div class="sidebar-role">@roleTitle</div>
+                    <div class="sidebar-user">@User.Identity!.Name</div>
+                </div>
+
+                @if (User.IsInRole("Admin"))
+                {
+                    @await Html.PartialAsync("~/Views/Shared/RoleMenus/_AdminMenu.cshtml")
+                }
+                else if (User.IsInRole("Receptionist"))
+                {
+                    @await Html.PartialAsync("~/Views/Shared/RoleMenus/_ReceptionistMenu.cshtml")
+                }
+                else if (User.IsInRole("Customer"))
+                {
+                    @await Html.PartialAsync("~/Views/Shared/RoleMenus/_CustomerMenu.cshtml")
+                }
+            </aside>
+        }
+
+        <main class="app-main @(isAuthenticated ? "" : "app-main-public")">
+            <div class="container-fluid py-4">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @RenderBody()
+            </div>
+
+            <footer class="app-footer border-top text-muted">
+                <div class="container-fluid">
+                    &copy; 2026 - HotelManagement
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

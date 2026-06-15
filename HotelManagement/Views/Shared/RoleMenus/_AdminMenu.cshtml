@@ -1,0 +1,81 @@
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+
+    string Active(string controller, string action)
+    {
+        return currentController == controller && currentAction == action
+            ? "active"
+            : "";
+    }
+}
+
+<nav class="sidebar-menu">
+    <div class="sidebar-section">Tổng quan</div>
+
+    <a class="sidebar-link @Active("Admin", "Dashboard")"
+       asp-controller="Admin"
+       asp-action="Dashboard">
+        Dashboard
+    </a>
+
+    <div class="sidebar-section">Quản lý khách sạn</div>
+
+    <a class="sidebar-link @Active("Admin", "RoomTypes")"
+       asp-controller="Admin"
+       asp-action="RoomTypes">
+        Loại phòng
+    </a>
+
+    <a class="sidebar-link @Active("Admin", "Rooms")"
+       asp-controller="Admin"
+       asp-action="Rooms">
+        Phòng
+    </a>
+
+    <a class="sidebar-link @Active("Admin", "Services")"
+       asp-controller="Admin"
+       asp-action="Services">
+        Dịch vụ
+    </a>
+
+    <div class="sidebar-section">Người dùng</div>
+
+    <a class="sidebar-link @Active("Admin", "Employees")"
+       asp-controller="Admin"
+       asp-action="Employees">
+        Nhân viên
+    </a>
+
+    <a class="sidebar-link @Active("Admin", "Customers")"
+       asp-controller="Admin"
+       asp-action="Customers">
+        Khách hàng
+    </a>
+
+    <div class="sidebar-section">Theo dõi</div>
+
+    <a class="sidebar-link @Active("Admin", "Bookings")"
+       asp-controller="Admin"
+       asp-action="Bookings">
+        Đặt phòng
+    </a>
+
+    <a class="sidebar-link @Active("Admin", "Invoices")"
+       asp-controller="Admin"
+       asp-action="Invoices">
+        Hóa đơn
+    </a>
+
+    <a class="sidebar-link @Active("Admin", "Reports")"
+       asp-controller="Admin"
+       asp-action="Reports">
+        Báo cáo doanh thu
+    </a>
+
+    <a class="sidebar-link @Active("Admin", "ActivityLogs")"
+       asp-controller="Admin"
+       asp-action="ActivityLogs">
+        Nhật ký hoạt động
+    </a>
+</nav>
