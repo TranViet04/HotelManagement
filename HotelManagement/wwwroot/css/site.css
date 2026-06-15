@@ -200,3 +200,25 @@ body {
   font-weight: 700;
   font-size: 18px;
 }
+
+.room-list-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5ff 100%);
+}
+
+.room-info-list {
+  font-size: 14px;
+}
+
+.room-info-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+.room-price {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
+}

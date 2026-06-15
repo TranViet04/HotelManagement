@@ -1,12 +1,21 @@
+using HotelManagement.Services.Customer;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HotelManagement.Controllers
 {
     public class RoomsController : Controller
     {
-        public IActionResult Index()
+        private readonly PublicRoomService _publicRoomService;
+
+        public RoomsController(PublicRoomService publicRoomService)
         {
-            return View("Placeholder", "Danh sách phòng");
+            _publicRoomService = publicRoomService;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var rooms = await _publicRoomService.GetActiveRoomTypesAsync();
+            return View(rooms);
         }
 
         public IActionResult Search()

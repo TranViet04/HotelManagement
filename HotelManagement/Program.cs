@@ -11,6 +11,7 @@ builder.Services.AddDbContext<HotelDbContext>(options =>
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<PublicHomeService>();
+builder.Services.AddScoped<PublicRoomService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
