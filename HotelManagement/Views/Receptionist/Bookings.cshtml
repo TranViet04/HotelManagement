@@ -215,12 +215,24 @@
                                 </td>
 
                                 <td class="text-end">
-                                    <a asp-controller="Receptionist"
-                                       asp-action="BookingDetails"
-                                       asp-route-id="@booking.BookingId"
-                                       class="btn btn-outline-primary btn-sm">
-                                        Xem
-                                    </a>
+                                    <div class="d-inline-flex gap-2">
+                                        <a asp-controller="Receptionist"
+                                           asp-action="BookingDetails"
+                                           asp-route-id="@booking.BookingId"
+                                           class="btn btn-outline-primary btn-sm">
+                                            Xem
+                                        </a>
+
+                                        @if (booking.Status == "Pending")
+                                        {
+                                            <a asp-controller="Receptionist"
+                                               asp-action="BookingDetails"
+                                               asp-route-id="@booking.BookingId"
+                                               class="btn btn-primary btn-sm">
+                                                Xác nhận
+                                            </a>
+                                        }
+                                    </div>
                                 </td>
                             </tr>
                         }

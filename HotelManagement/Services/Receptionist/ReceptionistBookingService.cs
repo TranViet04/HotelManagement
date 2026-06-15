@@ -1,5 +1,6 @@
 using HotelManagement.Constants;
 using HotelManagement.Data;
+using HotelManagement.Models;
 using HotelManagement.ViewModels.Receptionist;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -115,6 +116,130 @@ namespace HotelManagement.Services.Receptionist
             };
         }
 
+        public async Task<ReceptionistBookingDetailViewModel?> GetBookingDetailAsync(long bookingId)
+        {
+            var booking = await _context.Bookings
+                .AsNoTracking()
+                .Include(b => b.Customer)
+                .Include(b => b.Room)
+                    .ThenInclude(r => r!.RoomType)
+                .FirstOrDefaultAsync(b => b.Id == bookingId);
+
+            if (booking == null)
+            {
+                return null;
+            }
+
+            var canConfirm = booking.Status == BookingStatuses.Pending;
+
+            return new ReceptionistBookingDetailViewModel
+            {
+                BookingId = booking.Id,
+                BookingCode = booking.BookingCode,
+                CustomerName = booking.Customer?.FullName ?? "Không xác định",
+                CustomerEmail = booking.Customer?.Email,
+                CustomerPhoneNumber = booking.Customer?.PhoneNumber,
+                CustomerIdentityNumber = booking.Customer?.IdentityNumber,
+                CustomerAddress = booking.Customer?.Address,
+                RoomId = booking.RoomId,
+                RoomNumber = booking.Room?.RoomNumber ?? "Không xác định",
+                Floor = booking.Room?.Floor,
+                RoomTypeName = booking.Room?.RoomType?.Name ?? "Không xác định",
+                PricePerNight = booking.Room?.RoomType?.Price ?? 0,
+                Capacity = booking.Room?.RoomType?.Capacity ?? 0,
+                BedType = booking.Room?.RoomType?.BedType,
+                CheckInDate = booking.CheckInDate,
+                CheckOutDate = booking.CheckOutDate,
+                Nights = Math.Max(0, (booking.CheckOutDate.Date - booking.CheckInDate.Date).Days),
+                Adults = booking.Adults,
+                Children = booking.Children,
+                Status = booking.Status,
+                TotalRoomAmount = booking.TotalRoomAmount,
+                TotalServiceAmount = booking.TotalServiceAmount,
+                TotalAmount = booking.TotalAmount,
+                SpecialRequest = booking.SpecialRequest,
+                CancelReason = booking.CancelReason,
+                ConfirmedAt = booking.ConfirmedAt,
+                CheckedInAt = booking.CheckedInAt,
+                CheckedOutAt = booking.CheckedOutAt,
+                CancelledAt = booking.CancelledAt,
+                CreatedAt = booking.CreatedAt,
+                UpdatedAt = booking.UpdatedAt,
+                CanConfirm = canConfirm,
+                ConfirmBlockReason = canConfirm
+                    ? null
+                    : "Chỉ có thể xác nhận booking ở trạng thái Chờ xác nhận."
+            };
+        }
+
+        public async Task<ReceptionistBookingResult> ConfirmBookingAsync(long bookingId, long receptionistId)
+        {
+            var booking = await _context.Bookings
+                .Include(b => b.Room)
+                    .ThenInclude(r => r!.RoomType)
+                .FirstOrDefaultAsync(b => b.Id == bookingId);
+
+            if (booking == null)
+            {
+                return ReceptionistBookingResult.Failure("Không tìm thấy booking.");
+            }
+
+            if (booking.Status != BookingStatuses.Pending)
+            {
+                return ReceptionistBookingResult.Failure("Chỉ có thể xác nhận booking ở trạng thái Chờ xác nhận.");
+            }
+
+            if (booking.Room == null || booking.Room.RoomType == null)
+            {
+                return ReceptionistBookingResult.Failure("Booking không có thông tin phòng hợp lệ.");
+            }
+
+            if (booking.Room.Status == RoomStatuses.Maintenance || booking.Room.Status == RoomStatuses.Inactive)
+            {
+                return ReceptionistBookingResult.Failure("Phòng đang bảo trì hoặc ngưng sử dụng, không thể xác nhận booking.");
+            }
+
+            if (booking.Room.RoomType.Status != "Active")
+            {
+                return ReceptionistBookingResult.Failure("Loại phòng không còn hoạt động.");
+            }
+
+            var hasOverlappingBooking = await HasOverlappingActiveBookingAsync(
+                booking.RoomId,
+                booking.CheckInDate,
+                booking.CheckOutDate,
+                booking.Id
+            );
+
+            if (hasOverlappingBooking)
+            {
+                return ReceptionistBookingResult.Failure("Phòng đã có booking khác trùng thời gian, không thể xác nhận.");
+            }
+
+            var now = DateTime.Now;
+            booking.Status = BookingStatuses.Confirmed;
+            booking.ConfirmedAt = now;
+            booking.UpdatedAt = now;
+
+            _context.ActivityLogs.Add(new ActivityLog
+            {
+                UserId = receptionistId,
+                Action = "ConfirmBooking",
+                EntityName = "Booking",
+                EntityId = booking.Id,
+                Description = $"Receptionist xác nhận booking {booking.BookingCode}",
+                CreatedAt = now
+            });
+
+            await _context.SaveChangesAsync();
+
+            return ReceptionistBookingResult.Success(
+                booking.Id,
+                booking.BookingCode,
+                $"Đã xác nhận booking {booking.BookingCode}."
+            );
+        }
+
         private static List<SelectListItem> GetStatusOptions(string? selectedStatus)
         {
             return new List<SelectListItem>
@@ -156,6 +281,30 @@ namespace HotelManagement.Services.Receptionist
                     Selected = selectedStatus == BookingStatuses.Cancelled
                 }
             };
+        }
+
+        private async Task<bool> HasOverlappingActiveBookingAsync(
+            long roomId,
+            DateTime checkInDate,
+            DateTime checkOutDate,
+            long excludedBookingId)
+        {
+            var activeStatuses = new[]
+            {
+                BookingStatuses.Pending,
+                BookingStatuses.Confirmed,
+                BookingStatuses.CheckedIn
+            };
+
+            return await _context.Bookings
+                .AsNoTracking()
+                .AnyAsync(b =>
+                    b.Id != excludedBookingId
+                    && b.RoomId == roomId
+                    && activeStatuses.Contains(b.Status)
+                    && b.CheckInDate < checkOutDate
+                    && b.CheckOutDate > checkInDate
+                );
         }
     }
 }

@@ -2,6 +2,7 @@ using HotelManagement.Constants;
 using HotelManagement.Services.Receptionist;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HotelManagement.Controllers
 {
@@ -43,9 +44,39 @@ namespace HotelManagement.Controllers
         }
 
         [HttpGet]
-        public IActionResult BookingDetails(long id)
+        public async Task<IActionResult> BookingDetails(long id)
         {
-            return View("Placeholder", $"Chi tiết booking #{id}");
+            var model = await _bookingService.GetBookingDetailAsync(id);
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy booking.";
+                return RedirectToAction(nameof(Bookings));
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmBooking(long id)
+        {
+            if (!TryGetCurrentUserId(out var receptionistId))
+            {
+                return Challenge();
+            }
+
+            var result = await _bookingService.ConfirmBookingAsync(id, receptionistId);
+
+            if (!result.Succeeded)
+            {
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction(nameof(BookingDetails), new { id });
+            }
+
+            TempData["SuccessMessage"] = result.Message;
+
+            return RedirectToAction(nameof(BookingDetails), new { id });
         }
 
         public IActionResult CreateWalkInBooking()
@@ -81,6 +112,15 @@ namespace HotelManagement.Controllers
         public IActionResult Payments()
         {
             return View("Placeholder", "Thanh toán");
+        }
+
+        private bool TryGetCurrentUserId(out long userId)
+        {
+            userId = 0;
+
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            return long.TryParse(userIdValue, out userId);
         }
     }
 }
