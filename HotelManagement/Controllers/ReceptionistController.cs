@@ -1,5 +1,6 @@
 using HotelManagement.Constants;
 using HotelManagement.Services.Receptionist;
+using HotelManagement.ViewModels.Receptionist;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -123,9 +124,83 @@ namespace HotelManagement.Controllers
             return View("Placeholder", "Theo dõi phòng");
         }
 
-        public IActionResult BookingServices()
+        [HttpGet]
+        public async Task<IActionResult> BookingServices()
         {
-            return View("Placeholder", "Dịch vụ phát sinh");
+            var model = await _bookingService.GetCheckedInBookingsForServiceAsync();
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AddService(long bookingId)
+        {
+            var model = await _bookingService.PrepareAddServiceAsync(bookingId);
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy booking.";
+                return RedirectToAction(nameof(BookingServices));
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddService(AddBookingServiceViewModel model)
+        {
+            if (!TryGetCurrentUserId(out var receptionistId))
+            {
+                return Challenge();
+            }
+
+            var displayModel = await _bookingService.PrepareAddServiceAsync(model.BookingId);
+
+            if (displayModel == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy booking.";
+                return RedirectToAction(nameof(BookingServices));
+            }
+
+            displayModel.ServiceId = model.ServiceId;
+            displayModel.Quantity = model.Quantity;
+            displayModel.Note = model.Note;
+
+            if (!displayModel.CanAddService)
+            {
+                TempData["ErrorMessage"] = displayModel.AddServiceBlockReason;
+                return RedirectToAction(nameof(BookingDetails), new { id = model.BookingId });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(displayModel);
+            }
+
+            var result = await _bookingService.AddServiceToBookingAsync(model, receptionistId);
+
+            if (!result.Succeeded)
+            {
+                ModelState.AddModelError(string.Empty, result.Message);
+
+                displayModel = await _bookingService.PrepareAddServiceAsync(model.BookingId);
+
+                if (displayModel == null)
+                {
+                    TempData["ErrorMessage"] = result.Message;
+                    return RedirectToAction(nameof(BookingServices));
+                }
+
+                displayModel.ServiceId = model.ServiceId;
+                displayModel.Quantity = model.Quantity;
+                displayModel.Note = model.Note;
+
+                return View(displayModel);
+            }
+
+            TempData["SuccessMessage"] = result.Message;
+
+            return RedirectToAction(nameof(BookingDetails), new { id = model.BookingId });
         }
 
         public IActionResult Invoices()

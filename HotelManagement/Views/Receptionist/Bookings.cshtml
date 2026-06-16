@@ -242,6 +242,16 @@
                                                 Check-in
                                             </a>
                                         }
+
+                                        @if (booking.Status == "CheckedIn")
+                                        {
+                                            <a asp-controller="Receptionist"
+                                               asp-action="AddService"
+                                               asp-route-bookingId="@booking.BookingId"
+                                               class="btn btn-success btn-sm">
+                                                Dịch vụ
+                                            </a>
+                                        }
                                     </div>
                                 </td>
                             </tr>

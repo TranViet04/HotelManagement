@@ -123,6 +123,10 @@ namespace HotelManagement.Services.Receptionist
                 .Include(b => b.Customer)
                 .Include(b => b.Room)
                     .ThenInclude(r => r!.RoomType)
+                .Include(b => b.BookingServices)
+                    .ThenInclude(bs => bs.Service)
+                .Include(b => b.BookingServices)
+                    .ThenInclude(bs => bs.CreatedByUser)
                 .FirstOrDefaultAsync(b => b.Id == bookingId);
 
             if (booking == null)
@@ -132,6 +136,7 @@ namespace HotelManagement.Services.Receptionist
 
             var canConfirm = booking.Status == BookingStatuses.Pending;
             var checkInAvailability = GetCheckInAvailability(booking);
+            var addServiceAvailability = GetAddServiceAvailability(booking);
 
             return new ReceptionistBookingDetailViewModel
             {
@@ -171,7 +176,151 @@ namespace HotelManagement.Services.Receptionist
                     ? null
                     : "Chỉ có thể xác nhận booking ở trạng thái Chờ xác nhận.",
                 CanCheckIn = checkInAvailability.CanCheckIn,
-                CheckInBlockReason = checkInAvailability.Reason
+                CheckInBlockReason = checkInAvailability.Reason,
+                CanAddService = addServiceAvailability.CanAddService,
+                AddServiceBlockReason = addServiceAvailability.Reason,
+                Services = booking.BookingServices
+                    .OrderByDescending(bs => bs.UsedAt)
+                    .Select(bs => new ReceptionistBookingServiceItemViewModel
+                    {
+                        BookingServiceId = bs.Id,
+                        ServiceName = bs.Service?.Name ?? "Dịch vụ không xác định",
+                        Category = bs.Service?.Category,
+                        Unit = bs.Service?.Unit,
+                        Quantity = bs.Quantity,
+                        UnitPrice = bs.UnitPrice,
+                        TotalPrice = bs.TotalPrice,
+                        UsedAt = bs.UsedAt,
+                        Note = bs.Note,
+                        CreatedByName = bs.CreatedByUser?.FullName
+                    })
+                    .ToList()
+            };
+        }
+
+        public async Task<List<ReceptionistBookingListItemViewModel>> GetCheckedInBookingsForServiceAsync()
+        {
+            var bookingRows = await _context.Bookings
+                .AsNoTracking()
+                .Include(b => b.Customer)
+                .Include(b => b.Room)
+                    .ThenInclude(r => r!.RoomType)
+                .Where(b => b.Status == BookingStatuses.CheckedIn)
+                .OrderByDescending(b => b.CheckedInAt)
+                .ThenByDescending(b => b.CreatedAt)
+                .Select(b => new
+                {
+                    BookingId = b.Id,
+                    BookingCode = b.BookingCode,
+                    CustomerName = b.Customer != null ? b.Customer.FullName : "Không xác định",
+                    CustomerPhoneNumber = b.Customer != null ? b.Customer.PhoneNumber : null,
+                    CustomerEmail = b.Customer != null ? b.Customer.Email : null,
+                    RoomNumber = b.Room != null ? b.Room.RoomNumber : "Không xác định",
+                    RoomTypeName = b.Room != null && b.Room.RoomType != null
+                        ? b.Room.RoomType.Name
+                        : "Không xác định",
+                    CheckInDate = b.CheckInDate,
+                    CheckOutDate = b.CheckOutDate,
+                    Adults = b.Adults,
+                    Children = b.Children,
+                    Status = b.Status,
+                    TotalAmount = b.TotalAmount,
+                    CreatedAt = b.CreatedAt
+                })
+                .ToListAsync();
+
+            return bookingRows
+                .Select(b => new ReceptionistBookingListItemViewModel
+                {
+                    BookingId = b.BookingId,
+                    BookingCode = b.BookingCode,
+                    CustomerName = b.CustomerName,
+                    CustomerPhoneNumber = b.CustomerPhoneNumber,
+                    CustomerEmail = b.CustomerEmail,
+                    RoomNumber = b.RoomNumber,
+                    RoomTypeName = b.RoomTypeName,
+                    CheckInDate = b.CheckInDate,
+                    CheckOutDate = b.CheckOutDate,
+                    Nights = Math.Max(0, (b.CheckOutDate.Date - b.CheckInDate.Date).Days),
+                    Adults = b.Adults,
+                    Children = b.Children,
+                    Status = b.Status,
+                    TotalAmount = b.TotalAmount,
+                    CreatedAt = b.CreatedAt
+                })
+                .ToList();
+        }
+
+        public async Task<AddBookingServiceViewModel?> PrepareAddServiceAsync(long bookingId)
+        {
+            var booking = await _context.Bookings
+                .AsNoTracking()
+                .Include(b => b.Customer)
+                .Include(b => b.Room)
+                    .ThenInclude(r => r!.RoomType)
+                .Include(b => b.BookingServices)
+                    .ThenInclude(bs => bs.Service)
+                .Include(b => b.BookingServices)
+                    .ThenInclude(bs => bs.CreatedByUser)
+                .FirstOrDefaultAsync(b => b.Id == bookingId);
+
+            if (booking == null)
+            {
+                return null;
+            }
+
+            var addServiceAvailability = GetAddServiceAvailability(booking);
+
+            var serviceOptions = await _context.Services
+                .AsNoTracking()
+                .Where(s => s.Status == "Active")
+                .OrderBy(s => s.Name)
+                .Select(s => new SelectListItem
+                {
+                    Value = s.Id.ToString(),
+                    Text = s.Name + " - " + s.Price.ToString("N0") + " VND" + (s.Unit != null ? " / " + s.Unit : "")
+                })
+                .ToListAsync();
+
+            serviceOptions.Insert(0, new SelectListItem
+            {
+                Value = "",
+                Text = "-- Chọn dịch vụ --"
+            });
+
+            return new AddBookingServiceViewModel
+            {
+                BookingId = booking.Id,
+                BookingCode = booking.BookingCode,
+                CustomerName = booking.Customer?.FullName ?? "Không xác định",
+                RoomNumber = booking.Room?.RoomNumber ?? "Không xác định",
+                RoomTypeName = booking.Room?.RoomType?.Name ?? "Không xác định",
+                BookingStatus = booking.Status,
+                CheckInDate = booking.CheckInDate,
+                CheckOutDate = booking.CheckOutDate,
+                TotalRoomAmount = booking.TotalRoomAmount,
+                TotalServiceAmount = booking.TotalServiceAmount,
+                TotalAmount = booking.TotalAmount,
+                Quantity = 1,
+                CanAddService = addServiceAvailability.CanAddService,
+                AddServiceBlockReason = addServiceAvailability.Reason,
+                ServiceOptions = serviceOptions,
+                ExistingServices = booking.BookingServices
+                    .OrderByDescending(bs => bs.UsedAt)
+                    .Select(bs => new ReceptionistBookingServiceItemViewModel
+                    {
+                        BookingServiceId = bs.Id,
+                        ServiceName = bs.Service?.Name ?? "Dịch vụ không xác định",
+                        Category = bs.Service?.Category,
+                        Unit = bs.Service?.Unit,
+                        Quantity = bs.Quantity,
+                        UnitPrice = bs.UnitPrice,
+                        TotalPrice = bs.TotalPrice,
+                        UsedAt = bs.UsedAt,
+                        Note = bs.Note,
+                        CreatedByName = bs.CreatedByUser?.FullName
+                    })
+                    .ToList()
             };
         }
 
@@ -376,6 +525,88 @@ namespace HotelManagement.Services.Receptionist
             );
         }
 
+        public async Task<ReceptionistBookingResult> AddServiceToBookingAsync(
+            AddBookingServiceViewModel model,
+            long receptionistId)
+        {
+            var booking = await _context.Bookings
+                .Include(b => b.BookingServices)
+                .FirstOrDefaultAsync(b => b.Id == model.BookingId);
+
+            if (booking == null)
+            {
+                return ReceptionistBookingResult.Failure("Không tìm thấy booking.");
+            }
+
+            var addServiceAvailability = GetAddServiceAvailability(booking);
+
+            if (!addServiceAvailability.CanAddService)
+            {
+                return ReceptionistBookingResult.Failure(addServiceAvailability.Reason ?? "Không thể thêm dịch vụ cho booking này.");
+            }
+
+            if (model.ServiceId <= 0)
+            {
+                return ReceptionistBookingResult.Failure("Vui lòng chọn dịch vụ.");
+            }
+
+            if (model.Quantity <= 0)
+            {
+                return ReceptionistBookingResult.Failure("Số lượng dịch vụ phải lớn hơn 0.");
+            }
+
+            if (model.Quantity > 100)
+            {
+                return ReceptionistBookingResult.Failure("Số lượng dịch vụ tối đa là 100.");
+            }
+
+            var service = await _context.Services
+                .FirstOrDefaultAsync(s => s.Id == model.ServiceId && s.Status == "Active");
+
+            if (service == null)
+            {
+                return ReceptionistBookingResult.Failure("Dịch vụ không tồn tại hoặc không còn hoạt động.");
+            }
+
+            var now = DateTime.Now;
+            var unitPrice = service.Price;
+            var totalPrice = unitPrice * model.Quantity;
+
+            _context.BookingServices.Add(new BookingService
+            {
+                BookingId = booking.Id,
+                ServiceId = service.Id,
+                Quantity = model.Quantity,
+                UnitPrice = unitPrice,
+                TotalPrice = totalPrice,
+                UsedAt = now,
+                Note = string.IsNullOrWhiteSpace(model.Note) ? null : model.Note.Trim(),
+                CreatedByUserId = receptionistId
+            });
+
+            booking.TotalServiceAmount += totalPrice;
+            booking.TotalAmount = booking.TotalRoomAmount + booking.TotalServiceAmount;
+            booking.UpdatedAt = now;
+
+            _context.ActivityLogs.Add(new ActivityLog
+            {
+                UserId = receptionistId,
+                Action = "AddBookingService",
+                EntityName = "Booking",
+                EntityId = booking.Id,
+                Description = $"Receptionist thêm dịch vụ {service.Name} x{model.Quantity} cho booking {booking.BookingCode}",
+                CreatedAt = now
+            });
+
+            await _context.SaveChangesAsync();
+
+            return ReceptionistBookingResult.Success(
+                booking.Id,
+                booking.BookingCode,
+                $"Đã thêm dịch vụ {service.Name} cho booking {booking.BookingCode}."
+            );
+        }
+
         private static List<SelectListItem> GetStatusOptions(string? selectedStatus)
         {
             return new List<SelectListItem>
@@ -460,6 +691,16 @@ namespace HotelManagement.Services.Receptionist
             if (booking.CheckOutDate.Date <= today)
             {
                 return (false, "Booking đã quá ngày lưu trú, không thể check-in.");
+            }
+
+            return (true, null);
+        }
+
+        private static (bool CanAddService, string? Reason) GetAddServiceAvailability(Booking booking)
+        {
+            if (booking.Status != BookingStatuses.CheckedIn)
+            {
+                return (false, "Chỉ có thể thêm dịch vụ cho booking đang ở trạng thái Đã nhận phòng.");
             }
 
             return (true, null);

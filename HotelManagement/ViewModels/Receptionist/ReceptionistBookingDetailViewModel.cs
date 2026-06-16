@@ -71,5 +71,11 @@ namespace HotelManagement.ViewModels.Receptionist
         public bool CanCheckIn { get; set; }
 
         public string? CheckInBlockReason { get; set; }
+
+        public bool CanAddService { get; set; }
+
+        public string? AddServiceBlockReason { get; set; }
+
+        public List<ReceptionistBookingServiceItemViewModel> Services { get; set; } = new();
     }
 }

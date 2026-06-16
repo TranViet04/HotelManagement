@@ -353,3 +353,26 @@ body {
     font-size: 12px;
     padding: 7px 10px;
 }
+
+.receptionist-services-header,
+.receptionist-add-service-header {
+    border-radius: 8px;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fff4 100%);
+}
+
+.receptionist-services-table th,
+.receptionist-service-items-table th {
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.receptionist-services-table td,
+.receptionist-service-items-table td {
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.receptionist-services-table .badge {
+    font-size: 12px;
+    padding: 7px 10px;
+}
