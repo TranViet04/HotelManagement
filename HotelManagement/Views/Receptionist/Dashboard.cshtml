@@ -1,9 +1,353 @@
-﻿@{
-    ViewData["Title"] = "Receptionist Dashboard";
+@model HotelManagement.ViewModels.Receptionist.ReceptionistDashboardViewModel
+
+@{
+    ViewData["Title"] = "Dashboard lễ tân";
+
+    string GetBookingStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Pending" => "bg-warning text-dark",
+            "Confirmed" => "bg-primary",
+            "CheckedIn" => "bg-info text-dark",
+            "CheckedOut" => "bg-success",
+            "Cancelled" => "bg-secondary",
+            _ => "bg-light text-dark"
+        };
+    }
+
+    string GetBookingStatusText(string status)
+    {
+        return status switch
+        {
+            "Pending" => "Chờ xác nhận",
+            "Confirmed" => "Đã xác nhận",
+            "CheckedIn" => "Đã nhận phòng",
+            "CheckedOut" => "Đã trả phòng",
+            "Cancelled" => "Đã hủy",
+            _ => status
+        };
+    }
+
+    string GetRoomStatusText(string status)
+    {
+        return status switch
+        {
+            "Available" => "Phòng trống",
+            "Occupied" => "Đang ở",
+            "Cleaning" => "Đang dọn",
+            "Maintenance" => "Bảo trì",
+            "Inactive" => "Ngưng dùng",
+            _ => status
+        };
+    }
 }
 
-<h2 class="page-title">Receptionist Dashboard</h2>
+<section class="receptionist-dashboard-header shadow-sm p-4 p-lg-5 mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <div class="text-uppercase text-primary fw-semibold mb-2">
+                Receptionist Dashboard
+            </div>
 
-<div class="alert alert-info">
-    Bạn đang đăng nhập với quyền Lễ tân hoặc Admin.
+            <h1 class="fw-bold mb-3">
+                Tổng quan vận hành lễ tân
+            </h1>
+
+            <p class="text-muted mb-0">
+                Theo dõi booking chờ xử lý, lịch nhận/trả phòng hôm nay và tình trạng phòng.
+            </p>
+        </div>
+
+        <div class="col-lg-4 text-lg-end">
+            <a asp-controller="Receptionist"
+               asp-action="Bookings"
+               class="btn btn-primary">
+                Xem danh sách booking
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Booking chờ xác nhận</div>
+                <div class="display-6 fw-bold text-warning">@Model.PendingBookingsCount</div>
+                <a asp-controller="Receptionist" asp-action="Bookings" class="small text-decoration-none">
+                    Xem booking
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Check-in hôm nay</div>
+                <div class="display-6 fw-bold text-primary">@Model.TodayCheckInsCount</div>
+                <a asp-controller="Receptionist" asp-action="TodayCheckIns" class="small text-decoration-none">
+                    Xem danh sách
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Check-out hôm nay</div>
+                <div class="display-6 fw-bold text-success">@Model.TodayCheckOutsCount</div>
+                <a asp-controller="Receptionist" asp-action="TodayCheckOuts" class="small text-decoration-none">
+                    Xem danh sách
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Booking tạo hôm nay</div>
+                <div class="display-6 fw-bold">@Model.TodayNewBookingsCount</div>
+                <span class="small text-muted">Tính theo CreatedAt</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100 room-status-card">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Phòng trống</div>
+                <div class="h2 fw-bold text-success">@Model.AvailableRoomsCount</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100 room-status-card">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Đang ở</div>
+                <div class="h2 fw-bold text-info">@Model.OccupiedRoomsCount</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100 room-status-card">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Đang dọn</div>
+                <div class="h2 fw-bold text-secondary">@Model.CleaningRoomsCount</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="card border-0 shadow-sm h-100 room-status-card">
+            <div class="card-body">
+                <div class="text-muted small mb-1">Bảo trì</div>
+                <div class="h2 fw-bold text-danger">@Model.MaintenanceRoomsCount</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 p-4 pb-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">Booking chờ xác nhận</h5>
+
+                    <a asp-controller="Receptionist"
+                       asp-action="Bookings"
+                       class="btn btn-outline-primary btn-sm">
+                        Xem tất cả
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                @if (Model.PendingBookings == null || !Model.PendingBookings.Any())
+                {
+                    <div class="alert alert-info mb-0">
+                        Hiện không có booking nào đang chờ xác nhận.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 receptionist-dashboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã</th>
+                                    <th>Khách</th>
+                                    <th>Phòng</th>
+                                    <th>Ngày ở</th>
+                                    <th>Tổng tiền</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach (var booking in Model.PendingBookings)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@booking.BookingCode</div>
+                                            <span class="badge @GetBookingStatusBadgeClass(booking.Status)">
+                                                @GetBookingStatusText(booking.Status)
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            <div class="fw-semibold">@booking.CustomerName</div>
+                                            <div class="text-muted small">
+                                                @(booking.CustomerPhoneNumber ?? "Chưa có SĐT")
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <div>@booking.RoomTypeName</div>
+                                            <div class="text-muted small">Phòng @booking.RoomNumber</div>
+                                        </td>
+
+                                        <td>
+                                            <div>@booking.CheckInDate.ToString("dd/MM/yyyy")</div>
+                                            <div class="text-muted small">
+                                                đến @booking.CheckOutDate.ToString("dd/MM/yyyy")
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <strong class="text-primary">
+                                                @booking.TotalAmount.ToString("N0") VND
+                                            </strong>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 p-4 pb-0">
+                <h5 class="fw-bold mb-0">Tổng hợp trạng thái phòng</h5>
+            </div>
+
+            <div class="card-body p-4">
+                @if (Model.RoomStatusSummaries == null || !Model.RoomStatusSummaries.Any())
+                {
+                    <div class="alert alert-info mb-0">
+                        Chưa có dữ liệu phòng.
+                    </div>
+                }
+                else
+                {
+                    <div class="room-status-summary-list">
+                        @foreach (var item in Model.RoomStatusSummaries)
+                        {
+                            <div class="room-status-summary-item">
+                                <span>@GetRoomStatusText(item.Status)</span>
+                                <strong>@item.Count</strong>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-5">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-0 p-4 pb-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">Check-in hôm nay</h5>
+
+                    <a asp-controller="Receptionist"
+                       asp-action="TodayCheckIns"
+                       class="btn btn-outline-primary btn-sm">
+                        Xem tất cả
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                @if (Model.TodayCheckIns == null || !Model.TodayCheckIns.Any())
+                {
+                    <div class="alert alert-info mb-0">
+                        Hôm nay chưa có khách cần nhận phòng.
+                    </div>
+                }
+                else
+                {
+                    <div class="dashboard-booking-list">
+                        @foreach (var booking in Model.TodayCheckIns)
+                        {
+                            <div class="dashboard-booking-item">
+                                <div>
+                                    <div class="fw-semibold">@booking.CustomerName</div>
+                                    <div class="text-muted small">
+                                        @booking.BookingCode - Phòng @booking.RoomNumber
+                                    </div>
+                                </div>
+
+                                <span class="badge @GetBookingStatusBadgeClass(booking.Status)">
+                                    @GetBookingStatusText(booking.Status)
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 p-4 pb-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">Check-out hôm nay</h5>
+
+                    <a asp-controller="Receptionist"
+                       asp-action="TodayCheckOuts"
+                       class="btn btn-outline-primary btn-sm">
+                        Xem tất cả
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                @if (Model.TodayCheckOuts == null || !Model.TodayCheckOuts.Any())
+                {
+                    <div class="alert alert-info mb-0">
+                        Hôm nay chưa có khách cần trả phòng.
+                    </div>
+                }
+                else
+                {
+                    <div class="dashboard-booking-list">
+                        @foreach (var booking in Model.TodayCheckOuts)
+                        {
+                            <div class="dashboard-booking-item">
+                                <div>
+                                    <div class="fw-semibold">@booking.CustomerName</div>
+                                    <div class="text-muted small">
+                                        @booking.BookingCode - Phòng @booking.RoomNumber
+                                    </div>
+                                </div>
+
+                                <span class="badge @GetBookingStatusBadgeClass(booking.Status)">
+                                    @GetBookingStatusText(booking.Status)
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
 </div>

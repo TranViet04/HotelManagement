@@ -1,0 +1,135 @@
+@model List<HotelManagement.ViewModels.Receptionist.ReceptionistBookingListItemViewModel>
+
+@{
+    ViewData["Title"] = "Dịch vụ phát sinh";
+}
+
+<section class="receptionist-services-header shadow-sm p-4 p-lg-5 mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <div class="text-uppercase text-primary fw-semibold mb-2">
+                Dịch vụ phát sinh
+            </div>
+
+            <h1 class="fw-bold mb-3">
+                Thêm dịch vụ cho khách đang lưu trú
+            </h1>
+
+            <p class="text-muted mb-0">
+                Chỉ các booking đang ở trạng thái Đã nhận phòng mới được thêm dịch vụ phát sinh.
+            </p>
+        </div>
+
+        <div class="col-lg-4 text-lg-end">
+            <a asp-controller="Receptionist"
+               asp-action="Bookings"
+               class="btn btn-outline-primary">
+                Xem toàn bộ booking
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        @if (Model == null || !Model.Any())
+        {
+            <div class="p-4">
+                <div class="alert alert-info mb-0">
+                    Hiện chưa có booking nào đang lưu trú để thêm dịch vụ.
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="p-4 border-bottom">
+                <h5 class="fw-bold mb-1">Booking đang lưu trú</h5>
+                <p class="text-muted mb-0">
+                    Có @Model.Count booking có thể thêm dịch vụ phát sinh.
+                </p>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 receptionist-services-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã booking</th>
+                            <th>Khách hàng</th>
+                            <th>Phòng</th>
+                            <th>Thời gian ở</th>
+                            <th>Tổng tiền</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var booking in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@booking.BookingCode</div>
+                                    <span class="badge bg-info text-dark">Đã nhận phòng</span>
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold">@booking.CustomerName</div>
+                                    <div class="text-muted small">
+                                        @(booking.CustomerPhoneNumber ?? "Chưa có SĐT")
+                                    </div>
+                                    <div class="text-muted small">
+                                        @(booking.CustomerEmail ?? "Chưa có email")
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div>@booking.RoomTypeName</div>
+                                    <div class="text-muted small">Phòng @booking.RoomNumber</div>
+                                </td>
+
+                                <td>
+                                    <div>
+                                        @booking.CheckInDate.ToString("dd/MM/yyyy")
+                                        -
+                                        @booking.CheckOutDate.ToString("dd/MM/yyyy")
+                                    </div>
+                                    <div class="text-muted small">@booking.Nights đêm</div>
+                                </td>
+
+                                <td>
+                                    <strong class="text-primary">
+                                        @booking.TotalAmount.ToString("N0") VND
+                                    </strong>
+                                </td>
+
+                                <td class="text-end">
+                                    <div class="d-inline-flex gap-2">
+                                        <a asp-controller="Receptionist"
+                                           asp-action="BookingDetails"
+                                           asp-route-id="@booking.BookingId"
+                                           class="btn btn-outline-primary btn-sm">
+                                            Xem
+                                        </a>
+
+                                        <a asp-controller="Receptionist"
+                                           asp-action="AddService"
+                                           asp-route-bookingId="@booking.BookingId"
+                                           class="btn btn-success btn-sm">
+                                            Thêm dịch vụ
+                                        </a>
+
+                                        <a asp-controller="Receptionist"
+                                           asp-action="BookingDetails"
+                                           asp-route-id="@booking.BookingId"
+                                           class="btn btn-danger btn-sm">
+                                            Check-out
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>

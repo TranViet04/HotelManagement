@@ -16,11 +16,16 @@ namespace HotelManagement.Controllers
     {
         private readonly AuthService _authService;
         private readonly HotelDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public AuthController(AuthService authService, HotelDbContext context)
+        public AuthController(
+            AuthService authService,
+            HotelDbContext context,
+            IConfiguration configuration)
         {
             _authService = authService;
             _context = context;
+            _configuration = configuration;
         }
 
         [HttpGet]
@@ -102,6 +107,12 @@ namespace HotelManagement.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult GoogleLogin(string? returnUrl = null)
         {
+            if (!IsGoogleLoginConfigured())
+            {
+                TempData["Error"] = "Đăng nhập Google chưa được cấu hình.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
             var redirectUrl = Url.Action(
                 nameof(GoogleCallback),
                 "Auth",
@@ -181,6 +192,12 @@ namespace HotelManagement.Controllers
             }
 
             return RedirectToAction("Index", "Home");
+        }
+
+        private bool IsGoogleLoginConfigured()
+        {
+            return !string.IsNullOrWhiteSpace(_configuration["Authentication:Google:ClientId"])
+                && !string.IsNullOrWhiteSpace(_configuration["Authentication:Google:ClientSecret"]);
         }
 
         [HttpPost]

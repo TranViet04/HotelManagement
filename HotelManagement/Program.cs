@@ -2,6 +2,7 @@ using HotelManagement.Data;
 using HotelManagement.Services;
 using HotelManagement.Services.Admin;
 using HotelManagement.Services.Customer;
+using HotelManagement.Services.Receptionist;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +43,9 @@ builder.Services.AddScoped<PublicHomeService>();
 builder.Services.AddScoped<PublicRoomService>();
 builder.Services.AddScoped<CustomerBookingService>();
 builder.Services.AddScoped<CustomerProfileService>();
+builder.Services.AddScoped<ReceptionistDashboardService>();
+builder.Services.AddScoped<ReceptionistBookingService>();
+builder.Services.AddScoped<ReceptionistInvoiceService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

@@ -459,3 +459,267 @@ body {
   justify-content: center;
   width: 72px;
 }
+
+.receptionist-dashboard-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
+}
+
+.receptionist-dashboard-table th {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.receptionist-dashboard-table td {
+  font-size: 14px;
+}
+
+.room-status-card {
+  min-height: 120px;
+}
+
+.room-status-summary-list {
+  display: grid;
+  gap: 10px;
+}
+
+.room-status-summary-item {
+  align-items: center;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.dashboard-booking-list {
+  display: grid;
+  gap: 10px;
+}
+
+.dashboard-booking-item {
+  align-items: center;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+@media (max-width: 575.98px) {
+  .dashboard-booking-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+.receptionist-bookings-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
+}
+
+.receptionist-bookings-table th {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.receptionist-bookings-table td {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.receptionist-bookings-table .badge {
+  font-size: 12px;
+  padding: 7px 10px;
+}
+
+.receptionist-booking-detail-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
+}
+
+.receptionist-booking-status {
+  font-size: 14px;
+  padding: 8px 12px;
+}
+
+.room-info-list {
+  display: grid;
+  gap: 12px;
+}
+
+.room-info-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #eef2f7;
+  padding-bottom: 10px;
+}
+
+.room-info-list > div:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.room-info-list strong {
+  text-align: right;
+}
+
+.receptionist-booking-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.receptionist-booking-detail-grid div {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  padding: 14px;
+}
+
+.receptionist-booking-detail-grid span {
+  display: block;
+  color: #6b7280;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.receptionist-booking-detail-grid strong {
+  display: block;
+}
+
+@media (max-width: 575.98px) {
+  .receptionist-booking-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .room-info-list > div,
+  .booking-cost-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .room-info-list strong {
+    text-align: left;
+  }
+}
+
+.receptionist-checkin-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fff4 100%);
+}
+
+.receptionist-checkin-table th {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.receptionist-checkin-table td {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.receptionist-checkin-table .badge {
+  font-size: 12px;
+  padding: 7px 10px;
+}
+
+.receptionist-services-header,
+.receptionist-add-service-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fff4 100%);
+}
+
+.receptionist-services-table th,
+.receptionist-service-items-table th {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.receptionist-services-table td,
+.receptionist-service-items-table td {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.receptionist-services-table .badge {
+  font-size: 12px;
+  padding: 7px 10px;
+}
+
+.receptionist-checkout-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #fff5f5 100%);
+}
+
+.receptionist-checkout-table th {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.receptionist-checkout-table td {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.receptionist-checkout-table .badge {
+  font-size: 12px;
+  padding: 7px 10px;
+}
+
+.receptionist-invoices-header,
+.receptionist-invoice-detail-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
+}
+
+.receptionist-invoice-status {
+  font-size: 14px;
+  padding: 8px 12px;
+}
+
+.receptionist-invoices-table th,
+.receptionist-invoice-lines-table th {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.receptionist-invoices-table td,
+.receptionist-invoice-lines-table td {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.receptionist-invoices-table .badge {
+  font-size: 12px;
+  padding: 7px 10px;
+}
+
+.receptionist-payments-header,
+.receptionist-record-payment-header {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fff4 100%);
+}
+
+.receptionist-payments-table th,
+.receptionist-payment-lines-table th {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.receptionist-payments-table td,
+.receptionist-payment-lines-table td {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.receptionist-payments-table .badge {
+  font-size: 12px;
+  padding: 7px 10px;
+}

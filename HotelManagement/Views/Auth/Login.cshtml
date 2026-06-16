@@ -1,7 +1,11 @@
-﻿@model HotelManagement.ViewModels.Auth.LoginViewModel
+@model HotelManagement.ViewModels.Auth.LoginViewModel
+@inject IConfiguration Configuration
 
 @{
     ViewData["Title"] = "Đăng nhập";
+    var isGoogleLoginEnabled =
+        !string.IsNullOrWhiteSpace(Configuration["Authentication:Google:ClientId"])
+        && !string.IsNullOrWhiteSpace(Configuration["Authentication:Google:ClientSecret"]);
 }
 
 <div class="row justify-content-center">
@@ -48,14 +52,17 @@
             <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
         </form>
 
-        <form asp-controller="Auth" asp-action="GoogleLogin" method="post">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+        @if (isGoogleLoginEnabled)
+        {
+            <form asp-controller="Auth" asp-action="GoogleLogin" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
 
-            <button type="submit" class="btn btn-outline-danger w-100 mt-3">
-                Đăng nhập bằng Google
-            </button>
-        </form>
+                <button type="submit" class="btn btn-outline-danger w-100 mt-3">
+                    Đăng nhập bằng Google
+                </button>
+            </form>
+        }
 
         <div class="mt-3">
             Chưa có tài khoản?
