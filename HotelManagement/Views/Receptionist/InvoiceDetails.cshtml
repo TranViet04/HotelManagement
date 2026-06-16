@@ -211,11 +211,24 @@
                         Quay lại
                     </a>
 
-                    <a asp-controller="Receptionist"
-                       asp-action="Payments"
-                       class="btn btn-primary">
-                        Ghi nhận thanh toán
-                    </a>
+                    @if (Model.CanRecordPayment)
+                    {
+                        <a asp-controller="Receptionist"
+                           asp-action="RecordPayment"
+                           asp-route-invoiceId="@Model.InvoiceId"
+                           class="btn btn-success">
+                            Ghi nhận thanh toán
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                disabled
+                                title="@Model.RecordPaymentBlockReason">
+                            Không thể thanh toán
+                        </button>
+                    }
                 </div>
             </div>
         </div>
@@ -298,7 +311,9 @@
                                 {
                                     <tr>
                                         <td>@payment.PaymentCode</td>
-                                        <td>@payment.PaymentMethod</td>
+                                        <td>
+                                            @(payment.PaymentMethod == "Cash" ? "Tiền mặt" : payment.PaymentMethod == "BankTransfer" ? "Chuyển khoản" : payment.PaymentMethod)
+                                        </td>
                                         <td><strong>@payment.Amount.ToString("N0") VND</strong></td>
                                         <td>@payment.Status</td>
                                         <td>@payment.PaidAt.ToString("dd/MM/yyyy HH:mm")</td>

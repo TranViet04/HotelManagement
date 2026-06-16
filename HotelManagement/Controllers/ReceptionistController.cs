@@ -273,9 +273,83 @@ namespace HotelManagement.Controllers
             return RedirectToAction(nameof(InvoiceDetails), new { id = result.InvoiceId });
         }
 
-        public IActionResult Payments()
+        [HttpGet]
+        public async Task<IActionResult> Payments(string? keyword)
         {
-            return View("Placeholder", "Thanh toán");
+            var model = await _invoiceService.GetPaymentInvoicesAsync(keyword);
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> RecordPayment(long invoiceId)
+        {
+            var model = await _invoiceService.PrepareRecordPaymentAsync(invoiceId);
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy hóa đơn.";
+                return RedirectToAction(nameof(Payments));
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RecordPayment(RecordPaymentViewModel model)
+        {
+            if (!TryGetCurrentUserId(out var receptionistId))
+            {
+                return Challenge();
+            }
+
+            var displayModel = await _invoiceService.PrepareRecordPaymentAsync(model.InvoiceId);
+
+            if (displayModel == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy hóa đơn.";
+                return RedirectToAction(nameof(Payments));
+            }
+
+            displayModel.PaymentMethod = model.PaymentMethod;
+            displayModel.Amount = model.Amount;
+            displayModel.Note = model.Note;
+
+            if (!displayModel.CanRecordPayment)
+            {
+                TempData["ErrorMessage"] = displayModel.RecordPaymentBlockReason;
+                return RedirectToAction(nameof(InvoiceDetails), new { id = model.InvoiceId });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(displayModel);
+            }
+
+            var result = await _invoiceService.RecordPaymentAsync(model, receptionistId);
+
+            if (!result.Succeeded)
+            {
+                ModelState.AddModelError(string.Empty, result.Message);
+
+                displayModel = await _invoiceService.PrepareRecordPaymentAsync(model.InvoiceId);
+
+                if (displayModel == null)
+                {
+                    TempData["ErrorMessage"] = result.Message;
+                    return RedirectToAction(nameof(Payments));
+                }
+
+                displayModel.PaymentMethod = model.PaymentMethod;
+                displayModel.Amount = model.Amount;
+                displayModel.Note = model.Note;
+
+                return View(displayModel);
+            }
+
+            TempData["SuccessMessage"] = result.Message;
+
+            return RedirectToAction(nameof(InvoiceDetails), new { id = model.InvoiceId });
         }
 
         private bool TryGetCurrentUserId(out long userId)

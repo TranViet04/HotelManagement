@@ -100,6 +100,10 @@ namespace HotelManagement.ViewModels.Receptionist
 
         public DateTime? PaidAt { get; set; }
 
+        public bool CanRecordPayment { get; set; }
+
+        public string? RecordPaymentBlockReason { get; set; }
+
         public List<ReceptionistInvoiceServiceLineViewModel> Services { get; set; } = new();
 
         public List<ReceptionistInvoicePaymentLineViewModel> Payments { get; set; } = new();

@@ -424,3 +424,26 @@ body {
     font-size: 12px;
     padding: 7px 10px;
 }
+
+.receptionist-payments-header,
+.receptionist-record-payment-header {
+    border-radius: 8px;
+    background: linear-gradient(135deg, #ffffff 0%, #f0fff4 100%);
+}
+
+.receptionist-payments-table th,
+.receptionist-payment-lines-table th {
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.receptionist-payments-table td,
+.receptionist-payment-lines-table td {
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.receptionist-payments-table .badge {
+    font-size: 12px;
+    padding: 7px 10px;
+}
