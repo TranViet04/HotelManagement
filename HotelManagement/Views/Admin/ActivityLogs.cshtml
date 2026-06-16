@@ -1,0 +1,119 @@
+@model List<HotelManagement.ViewModels.Admin.ActivityLogViewModel>
+
+@{
+    ViewData["Title"] = "Nhật ký hoạt động";
+    var selectedAction = ViewBag.Action as string;
+}
+
+<h2 class="mb-4">Nhật ký hoạt động</h2>
+
+<form method="get" class="row mb-3">
+    <div class="col-md-3">
+        <input type="text"
+               name="keyword"
+               value="@ViewBag.Keyword"
+               class="form-control"
+               placeholder="Tìm người dùng, thao tác, mô tả..." />
+    </div>
+
+    <div class="col-md-2">
+        <select name="action" class="form-select">
+            <option value="">-- Tất cả thao tác --</option>
+            <option value="CreateRoomType" selected="@(selectedAction == "CreateRoomType" ? "selected" : null)">Tạo loại phòng</option>
+            <option value="UpdateRoomType" selected="@(selectedAction == "UpdateRoomType" ? "selected" : null)">Sửa loại phòng</option>
+            <option value="DeactivateRoomType" selected="@(selectedAction == "DeactivateRoomType" ? "selected" : null)">Ẩn loại phòng</option>
+            <option value="CreateRoom" selected="@(selectedAction == "CreateRoom" ? "selected" : null)">Tạo phòng</option>
+            <option value="UpdateRoom" selected="@(selectedAction == "UpdateRoom" ? "selected" : null)">Sửa phòng</option>
+            <option value="CreateService" selected="@(selectedAction == "CreateService" ? "selected" : null)">Tạo dịch vụ</option>
+            <option value="UpdateService" selected="@(selectedAction == "UpdateService" ? "selected" : null)">Sửa dịch vụ</option>
+            <option value="DeactivateService" selected="@(selectedAction == "DeactivateService" ? "selected" : null)">Ẩn dịch vụ</option>
+            <option value="CreateUser" selected="@(selectedAction == "CreateUser" ? "selected" : null)">Tạo người dùng</option>
+            <option value="UpdateUser" selected="@(selectedAction == "UpdateUser" ? "selected" : null)">Sửa người dùng</option>
+            <option value="LockUser" selected="@(selectedAction == "LockUser" ? "selected" : null)">Khóa người dùng</option>
+            <option value="UnlockUser" selected="@(selectedAction == "UnlockUser" ? "selected" : null)">Mở khóa người dùng</option>
+            <option value="DeactivateUser" selected="@(selectedAction == "DeactivateUser" ? "selected" : null)">Ngưng người dùng</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <input type="date"
+               name="fromDate"
+               value="@ViewBag.FromDate"
+               class="form-control" />
+    </div>
+
+    <div class="col-md-2">
+        <input type="date"
+               name="toDate"
+               value="@ViewBag.ToDate"
+               class="form-control" />
+    </div>
+
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+            Lọc
+        </button>
+    </div>
+
+    <div class="col-md-1">
+        <a asp-controller="Admin"
+           asp-action="ActivityLogs"
+           class="btn btn-secondary w-100">
+            Xóa
+        </a>
+    </div>
+</form>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        Chưa có nhật ký hoạt động nào.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Thời gian</th>
+                    <th>Người dùng</th>
+                    <th>Vai trò</th>
+                    <th>Thao tác</th>
+                    <th>Đối tượng</th>
+                    <th>Mô tả</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model)
+                {
+                    <tr>
+                        <td>@log.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@log.UserName</td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(log.UserRole))
+                            {
+                                <span class="badge bg-secondary">@log.UserRole</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">@log.Action</span>
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(log.EntityName))
+                            {
+                                <span>@log.EntityName</span>
+
+                                @if (log.EntityId.HasValue)
+                                {
+                                    <span>#@log.EntityId</span>
+                                }
+                            }
+                        </td>
+                        <td>@log.Description</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

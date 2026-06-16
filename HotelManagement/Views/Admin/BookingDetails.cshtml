@@ -1,0 +1,213 @@
+@model HotelManagement.ViewModels.Admin.BookingDetailViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết đặt phòng";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Chi tiết đặt phòng</h2>
+
+    <a asp-controller="Admin"
+       asp-action="Bookings"
+       class="btn btn-secondary">
+        Quay lại
+    </a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        Thông tin đặt phòng
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tr>
+                <th style="width: 220px;">Mã đặt phòng</th>
+                <td>@Model.BookingCode</td>
+            </tr>
+            <tr>
+                <th>Trạng thái</th>
+                <td>@Model.Status</td>
+            </tr>
+            <tr>
+                <th>Ngày nhận phòng</th>
+                <td>@Model.CheckInDate.ToString("dd/MM/yyyy")</td>
+            </tr>
+            <tr>
+                <th>Ngày trả phòng</th>
+                <td>@Model.CheckOutDate.ToString("dd/MM/yyyy")</td>
+            </tr>
+            <tr>
+                <th>Số khách</th>
+                <td>@Model.Adults người lớn, @Model.Children trẻ em</td>
+            </tr>
+            <tr>
+                <th>Yêu cầu đặc biệt</th>
+                <td>@(string.IsNullOrWhiteSpace(Model.SpecialRequest) ? "Không có" : Model.SpecialRequest)</td>
+            </tr>
+            @if (!string.IsNullOrWhiteSpace(Model.CancelReason))
+            {
+                <tr>
+                    <th>Lý do hủy</th>
+                    <td>@Model.CancelReason</td>
+                </tr>
+            }
+        </table>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        Thông tin khách hàng
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tr>
+                <th style="width: 220px;">Họ tên</th>
+                <td>@Model.CustomerName</td>
+            </tr>
+            <tr>
+                <th>Số điện thoại</th>
+                <td>@Model.CustomerPhone</td>
+            </tr>
+            <tr>
+                <th>Email</th>
+                <td>@Model.CustomerEmail</td>
+            </tr>
+            <tr>
+                <th>CCCD/CMND</th>
+                <td>@Model.CustomerIdentityNumber</td>
+            </tr>
+            <tr>
+                <th>Địa chỉ</th>
+                <td>@Model.CustomerAddress</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        Thông tin phòng
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tr>
+                <th style="width: 220px;">Số phòng</th>
+                <td>@Model.RoomNumber</td>
+            </tr>
+            <tr>
+                <th>Loại phòng</th>
+                <td>@Model.RoomTypeName</td>
+            </tr>
+            <tr>
+                <th>Giá phòng</th>
+                <td>@Model.RoomPrice.ToString("N0") đ / đêm</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        Dịch vụ phát sinh
+    </div>
+    <div class="card-body">
+        @if (!Model.Services.Any())
+        {
+            <p class="text-muted mb-0">Chưa có dịch vụ phát sinh.</p>
+        }
+        else
+        {
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Dịch vụ</th>
+                        <th>Số lượng</th>
+                        <th>Đơn giá</th>
+                        <th>Thành tiền</th>
+                        <th>Thời gian dùng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var service in Model.Services)
+                    {
+                        <tr>
+                            <td>@service.ServiceName</td>
+                            <td>@service.Quantity</td>
+                            <td>@service.UnitPrice.ToString("N0") đ</td>
+                            <td>@service.TotalPrice.ToString("N0") đ</td>
+                            <td>@service.UsedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        Tổng tiền
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tr>
+                <th style="width: 220px;">Tiền phòng</th>
+                <td>@Model.TotalRoomAmount.ToString("N0") đ</td>
+            </tr>
+            <tr>
+                <th>Tiền dịch vụ</th>
+                <td>@Model.TotalServiceAmount.ToString("N0") đ</td>
+            </tr>
+            <tr>
+                <th>Tổng cộng</th>
+                <td>
+                    <strong>@Model.TotalAmount.ToString("N0") đ</strong>
+                </td>
+            </tr>
+            <tr>
+                <th>Hóa đơn</th>
+                <td>
+                    @if (!string.IsNullOrWhiteSpace(Model.InvoiceCode))
+                    {
+                        <span>@Model.InvoiceCode - @Model.InvoiceStatus</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Chưa có hóa đơn</span>
+                    }
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        Mốc thời gian
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tr>
+                <th style="width: 220px;">Ngày tạo</th>
+                <td>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+            </tr>
+            <tr>
+                <th>Xác nhận lúc</th>
+                <td>@(Model.ConfirmedAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa xác nhận")</td>
+            </tr>
+            <tr>
+                <th>Check-in lúc</th>
+                <td>@(Model.CheckedInAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa check-in")</td>
+            </tr>
+            <tr>
+                <th>Check-out lúc</th>
+                <td>@(Model.CheckedOutAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa check-out")</td>
+            </tr>
+            <tr>
+                <th>Hủy lúc</th>
+                <td>@(Model.CancelledAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa hủy")</td>
+            </tr>
+        </table>
+    </div>
+</div>

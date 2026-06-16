@@ -3,6 +3,7 @@ using HotelManagement.Services.Admin;
 using HotelManagement.ViewModels.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace HotelManagement.Controllers
 {
@@ -12,17 +13,38 @@ namespace HotelManagement.Controllers
         private readonly AdminDashboardService _dashboardService;
         private readonly RoomTypeManagementService _roomTypeService;
         private readonly RoomManagementService _roomService;
+        private readonly ServiceManagementService _serviceManagementService;
+        private readonly EmployeeManagementService _employeeService;
+        private readonly CustomerManagementService _customerService;
+        private readonly BookingTrackingService _bookingTrackingService;
+        private readonly InvoiceTrackingService _invoiceTrackingService;
+        private readonly RevenueReportService _revenueReportService;
+        private readonly ActivityLogService _activityLogService;
         private readonly IWebHostEnvironment _environment;
 
         public AdminController(
             AdminDashboardService dashboardService,
             RoomTypeManagementService roomTypeService,
             RoomManagementService roomService,
+            ServiceManagementService serviceManagementService,
+            EmployeeManagementService employeeService,
+            CustomerManagementService customerService,
+            BookingTrackingService bookingTrackingService,
+            InvoiceTrackingService invoiceTrackingService,
+            RevenueReportService revenueReportService,
+            ActivityLogService activityLogService,
             IWebHostEnvironment environment)
         {
             _dashboardService = dashboardService;
             _roomTypeService = roomTypeService;
             _roomService = roomService;
+            _serviceManagementService = serviceManagementService;
+            _employeeService = employeeService;
+            _customerService = customerService;
+            _bookingTrackingService = bookingTrackingService;
+            _invoiceTrackingService = invoiceTrackingService;
+            _revenueReportService = revenueReportService;
+            _activityLogService = activityLogService;
             _environment = environment;
         }
 
@@ -61,7 +83,12 @@ namespace HotelManagement.Controllers
                 return View(model);
             }
 
-            await _roomTypeService.CreateAsync(model);
+            var roomTypeId = await _roomTypeService.CreateAsync(model);
+            await AddActivityLogAsync(
+                "CreateRoomType",
+                "RoomType",
+                roomTypeId,
+                $"Tạo loại phòng {model.Name.Trim()}");
 
             TempData["SuccessMessage"] = "Thêm loại phòng thành công";
             return RedirectToAction(nameof(RoomTypes));
@@ -106,6 +133,12 @@ namespace HotelManagement.Controllers
                 return RedirectToAction(nameof(RoomTypes));
             }
 
+            await AddActivityLogAsync(
+                "UpdateRoomType",
+                "RoomType",
+                model.Id,
+                $"Cập nhật loại phòng {model.Name.Trim()}");
+
             TempData["SuccessMessage"] = "Cập nhật loại phòng thành công";
             return RedirectToAction(nameof(RoomTypes));
         }
@@ -121,6 +154,12 @@ namespace HotelManagement.Controllers
                 TempData["ErrorMessage"] = "Không tìm thấy loại phòng";
                 return RedirectToAction(nameof(RoomTypes));
             }
+
+            await AddActivityLogAsync(
+                "DeactivateRoomType",
+                "RoomType",
+                id,
+                $"Ngưng sử dụng loại phòng #{id}");
 
             TempData["SuccessMessage"] = "Đã ngưng sử dụng loại phòng";
             return RedirectToAction(nameof(RoomTypes));
@@ -179,6 +218,11 @@ namespace HotelManagement.Controllers
 
             var imageUrls = await SaveRoomImagesAsync(images);
             await _roomService.AddImagesAsync(roomId, imageUrls);
+            await AddActivityLogAsync(
+                "CreateRoom",
+                "Room",
+                roomId,
+                $"Tạo phòng {model.RoomNumber.Trim()}");
 
             TempData["SuccessMessage"] = "Thêm phòng thành công";
             return RedirectToAction(nameof(Rooms));
@@ -231,6 +275,11 @@ namespace HotelManagement.Controllers
 
             var imageUrls = await SaveRoomImagesAsync(images);
             await _roomService.AddImagesAsync(model.Id, imageUrls);
+            await AddActivityLogAsync(
+                "UpdateRoom",
+                "Room",
+                model.Id,
+                $"Cập nhật phòng {model.RoomNumber.Trim()}");
 
             TempData["SuccessMessage"] = "Cập nhật phòng thành công";
             return RedirectToAction(nameof(Rooms));
@@ -260,29 +309,466 @@ namespace HotelManagement.Controllers
             return RedirectToAction(nameof(EditRoom), new { id = roomId });
         }
 
-        public IActionResult Services()
+        public async Task<IActionResult> Services()
         {
-            return View("Placeholder", "Quản lý dịch vụ");
+            var model = await _serviceManagementService.GetAllAsync();
+            return View(model);
         }
 
-        public IActionResult Employees()
+        [HttpGet]
+        public IActionResult CreateService()
         {
-            return View("Placeholder", "Quản lý nhân viên");
+            return View(new ServiceFormViewModel());
         }
 
-        public IActionResult Customers()
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateService(ServiceFormViewModel model)
         {
-            return View("Placeholder", "Quản lý khách hàng");
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var nameExists = await _serviceManagementService.IsNameExistsAsync(model.Name);
+
+            if (nameExists)
+            {
+                ModelState.AddModelError(nameof(model.Name), "Tên dịch vụ đã tồn tại");
+                return View(model);
+            }
+
+            var serviceId = await _serviceManagementService.CreateAsync(model);
+            await AddActivityLogAsync(
+                "CreateService",
+                "Service",
+                serviceId,
+                $"Tạo dịch vụ {model.Name.Trim()}");
+
+            TempData["SuccessMessage"] = "Thêm dịch vụ thành công";
+            return RedirectToAction(nameof(Services));
         }
 
-        public IActionResult Bookings()
+        [HttpGet]
+        public async Task<IActionResult> EditService(long id)
         {
-            return View("Placeholder", "Theo dõi đặt phòng");
+            var model = await _serviceManagementService.GetForEditAsync(id);
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy dịch vụ";
+                return RedirectToAction(nameof(Services));
+            }
+
+            return View(model);
         }
 
-        public IActionResult Invoices()
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditService(ServiceFormViewModel model)
         {
-            return View("Placeholder", "Theo dõi hóa đơn");
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var nameExists = await _serviceManagementService.IsNameExistsAsync(model.Name, model.Id);
+
+            if (nameExists)
+            {
+                ModelState.AddModelError(nameof(model.Name), "Tên dịch vụ đã tồn tại");
+                return View(model);
+            }
+
+            var success = await _serviceManagementService.UpdateAsync(model);
+
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy dịch vụ";
+                return RedirectToAction(nameof(Services));
+            }
+
+            await AddActivityLogAsync(
+                "UpdateService",
+                "Service",
+                model.Id,
+                $"Cập nhật dịch vụ {model.Name.Trim()}");
+
+            TempData["SuccessMessage"] = "Cập nhật dịch vụ thành công";
+            return RedirectToAction(nameof(Services));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeactivateService(long id)
+        {
+            var success = await _serviceManagementService.DeactivateAsync(id);
+
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy dịch vụ";
+                return RedirectToAction(nameof(Services));
+            }
+
+            await AddActivityLogAsync(
+                "DeactivateService",
+                "Service",
+                id,
+                $"Ngưng sử dụng dịch vụ #{id}");
+
+            TempData["SuccessMessage"] = "Đã ngưng sử dụng dịch vụ";
+            return RedirectToAction(nameof(Services));
+        }
+
+        public async Task<IActionResult> Employees()
+        {
+            var model = await _employeeService.GetReceptionistsAsync();
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult CreateEmployee()
+        {
+            return View(new CreateEmployeeViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateEmployee(CreateEmployeeViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var emailExists = await _employeeService.IsEmailExistsAsync(model.Email);
+
+            if (emailExists)
+            {
+                ModelState.AddModelError(nameof(model.Email), "Email đã được sử dụng");
+                return View(model);
+            }
+
+            var userId = await _employeeService.CreateReceptionistAsync(model);
+            await AddActivityLogAsync(
+                "CreateUser",
+                "User",
+                userId,
+                $"Tạo tài khoản nhân viên {model.FullName.Trim()}");
+
+            TempData["SuccessMessage"] = "Tạo tài khoản lễ tân thành công";
+            return RedirectToAction(nameof(Employees));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditEmployee(long id)
+        {
+            var model = await _employeeService.GetForEditAsync(id);
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy nhân viên lễ tân";
+                return RedirectToAction(nameof(Employees));
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditEmployee(EditEmployeeViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var emailExists = await _employeeService.IsEmailExistsAsync(model.Email, model.Id);
+
+            if (emailExists)
+            {
+                ModelState.AddModelError(nameof(model.Email), "Email đã được sử dụng");
+                return View(model);
+            }
+
+            var success = await _employeeService.UpdateReceptionistAsync(model);
+
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy nhân viên lễ tân";
+                return RedirectToAction(nameof(Employees));
+            }
+
+            await AddActivityLogAsync(
+                "UpdateUser",
+                "User",
+                model.Id,
+                $"Cập nhật nhân viên {model.FullName.Trim()}");
+
+            TempData["SuccessMessage"] = "Cập nhật nhân viên lễ tân thành công";
+            return RedirectToAction(nameof(Employees));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LockEmployee(long id)
+        {
+            var success = await _employeeService.LockAsync(id);
+
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy nhân viên lễ tân";
+                return RedirectToAction(nameof(Employees));
+            }
+
+            await AddActivityLogAsync(
+                "LockUser",
+                "User",
+                id,
+                $"Khóa tài khoản nhân viên #{id}");
+
+            TempData["SuccessMessage"] = "Đã khóa tài khoản lễ tân";
+            return RedirectToAction(nameof(Employees));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UnlockEmployee(long id)
+        {
+            var success = await _employeeService.UnlockAsync(id);
+
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy nhân viên lễ tân";
+                return RedirectToAction(nameof(Employees));
+            }
+
+            await AddActivityLogAsync(
+                "UnlockUser",
+                "User",
+                id,
+                $"Mở khóa tài khoản nhân viên #{id}");
+
+            TempData["SuccessMessage"] = "Đã mở khóa tài khoản lễ tân";
+            return RedirectToAction(nameof(Employees));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeactivateEmployee(long id)
+        {
+            var success = await _employeeService.DeactivateAsync(id);
+
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy nhân viên lễ tân";
+                return RedirectToAction(nameof(Employees));
+            }
+
+            await AddActivityLogAsync(
+                "DeactivateUser",
+                "User",
+                id,
+                $"Ngưng sử dụng tài khoản nhân viên #{id}");
+
+            TempData["SuccessMessage"] = "Đã ngưng sử dụng tài khoản lễ tân";
+            return RedirectToAction(nameof(Employees));
+        }
+
+        public async Task<IActionResult> Customers()
+        {
+            var model = await _customerService.GetCustomersAsync();
+            return View(model);
+        }
+
+        public async Task<IActionResult> CustomerDetails(long id)
+        {
+            var model = await _customerService.GetDetailAsync(id);
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy khách hàng";
+                return RedirectToAction(nameof(Customers));
+            }
+
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditCustomer(long id)
+        {
+            var model = await _customerService.GetForEditAsync(id);
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy khách hàng";
+                return RedirectToAction(nameof(Customers));
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCustomer(EditCustomerViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var emailExists = await _customerService.IsEmailExistsAsync(model.Email, model.Id);
+
+            if (emailExists)
+            {
+                ModelState.AddModelError(nameof(model.Email), "Email đã được sử dụng");
+                return View(model);
+            }
+
+            var success = await _customerService.UpdateCustomerAsync(model);
+
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy khách hàng";
+                return RedirectToAction(nameof(Customers));
+            }
+
+            await AddActivityLogAsync(
+                "UpdateUser",
+                "User",
+                model.Id,
+                $"Cập nhật khách hàng {model.FullName.Trim()}");
+
+            TempData["SuccessMessage"] = "Cập nhật khách hàng thành công";
+            return RedirectToAction(nameof(Customers));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LockCustomer(long id)
+        {
+            var success = await _customerService.LockAsync(id);
+
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy khách hàng";
+                return RedirectToAction(nameof(Customers));
+            }
+
+            await AddActivityLogAsync(
+                "LockUser",
+                "User",
+                id,
+                $"Khóa tài khoản khách hàng #{id}");
+
+            TempData["SuccessMessage"] = "Đã khóa tài khoản khách hàng";
+            return RedirectToAction(nameof(Customers));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UnlockCustomer(long id)
+        {
+            var success = await _customerService.UnlockAsync(id);
+
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy khách hàng";
+                return RedirectToAction(nameof(Customers));
+            }
+
+            await AddActivityLogAsync(
+                "UnlockUser",
+                "User",
+                id,
+                $"Mở khóa tài khoản khách hàng #{id}");
+
+            TempData["SuccessMessage"] = "Đã mở khóa tài khoản khách hàng";
+            return RedirectToAction(nameof(Customers));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeactivateCustomer(long id)
+        {
+            var success = await _customerService.DeactivateAsync(id);
+
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy khách hàng";
+                return RedirectToAction(nameof(Customers));
+            }
+
+            await AddActivityLogAsync(
+                "DeactivateUser",
+                "User",
+                id,
+                $"Ngưng sử dụng tài khoản khách hàng #{id}");
+
+            TempData["SuccessMessage"] = "Đã ngưng sử dụng tài khoản khách hàng";
+            return RedirectToAction(nameof(Customers));
+        }
+
+        public async Task<IActionResult> Bookings(
+            string? keyword,
+            string? status,
+            DateTime? checkInDate)
+        {
+            var bookings = await _bookingTrackingService.GetBookingsAsync(keyword, status, checkInDate);
+
+            ViewBag.Keyword = keyword?.Trim();
+            ViewBag.Status = status;
+            ViewBag.CheckInDate = checkInDate?.ToString("yyyy-MM-dd");
+
+            return View(bookings);
+        }
+
+        public async Task<IActionResult> BookingDetails(long id)
+        {
+            var model = await _bookingTrackingService.GetDetailAsync(id);
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy đặt phòng";
+                return RedirectToAction(nameof(Bookings));
+            }
+
+            return View(model);
+        }
+
+        public async Task<IActionResult> Invoices(
+            string? keyword,
+            string? status,
+            DateTime? fromDate,
+            DateTime? toDate)
+        {
+            var invoices = await _invoiceTrackingService.GetInvoicesAsync(keyword, status, fromDate, toDate);
+
+            ViewBag.Keyword = keyword?.Trim();
+            ViewBag.Status = status;
+            ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
+            ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
+
+            return View(invoices);
+        }
+
+        public async Task<IActionResult> InvoiceDetails(long id)
+        {
+            var model = await _invoiceTrackingService.GetDetailAsync(id);
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy hóa đơn";
+                return RedirectToAction(nameof(Invoices));
+            }
+
+            return View(model);
+        }
+
+        public async Task<IActionResult> RevenueReport(DateTime? fromDate, DateTime? toDate)
+        {
+            var model = await _revenueReportService.GetReportAsync(fromDate, toDate);
+            return View(model);
         }
 
         public IActionResult Reports()
@@ -290,9 +776,37 @@ namespace HotelManagement.Controllers
             return View("Placeholder", "Báo cáo doanh thu");
         }
 
-        public IActionResult ActivityLogs()
+        public async Task<IActionResult> ActivityLogs(
+            string? keyword,
+            string? action,
+            DateTime? fromDate,
+            DateTime? toDate)
         {
-            return View("Placeholder", "Nhật ký hoạt động");
+            var logs = await _activityLogService.GetLogsAsync(keyword, action, fromDate, toDate);
+
+            ViewBag.Keyword = keyword?.Trim();
+            ViewBag.Action = action;
+            ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
+            ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
+
+            return View(logs);
+        }
+
+        private async Task AddActivityLogAsync(
+            string action,
+            string entityName,
+            long? entityId,
+            string description)
+        {
+            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            long? userId = null;
+
+            if (long.TryParse(userIdString, out var parsedUserId))
+            {
+                userId = parsedUserId;
+            }
+
+            await _activityLogService.AddAsync(userId, action, entityName, entityId, description);
         }
 
         private async Task<List<string>> SaveRoomImagesAsync(List<IFormFile>? images)

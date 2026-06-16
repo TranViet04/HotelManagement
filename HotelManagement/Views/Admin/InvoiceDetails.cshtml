@@ -1,0 +1,224 @@
+@model HotelManagement.ViewModels.Admin.InvoiceDetailViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết hóa đơn";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Chi tiết hóa đơn</h2>
+
+    <a asp-controller="Admin"
+       asp-action="Invoices"
+       class="btn btn-secondary">
+        Quay lại
+    </a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        Thông tin hóa đơn
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tr>
+                <th style="width: 220px;">Mã hóa đơn</th>
+                <td>@Model.InvoiceCode</td>
+            </tr>
+            <tr>
+                <th>Trạng thái</th>
+                <td>
+                    @if (Model.Status == "Paid")
+                    {
+                        <span class="badge bg-success">Paid</span>
+                    }
+                    else if (Model.Status == "Unpaid")
+                    {
+                        <span class="badge bg-warning text-dark">Unpaid</span>
+                    }
+                    else if (Model.Status == "PartiallyPaid")
+                    {
+                        <span class="badge bg-info text-dark">PartiallyPaid</span>
+                    }
+                    else if (Model.Status == "Cancelled")
+                    {
+                        <span class="badge bg-danger">Cancelled</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">@Model.Status</span>
+                    }
+                </td>
+            </tr>
+            <tr>
+                <th>Người lập</th>
+                <td>@(Model.IssuedByName ?? "Không xác định")</td>
+            </tr>
+            <tr>
+                <th>Ngày lập</th>
+                <td>@Model.IssuedAt.ToString("dd/MM/yyyy HH:mm")</td>
+            </tr>
+            <tr>
+                <th>Ngày thanh toán</th>
+                <td>@(Model.PaidAt?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa thanh toán")</td>
+            </tr>
+            <tr>
+                <th>Ghi chú</th>
+                <td>@(string.IsNullOrWhiteSpace(Model.Note) ? "Không có" : Model.Note)</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        Thông tin đặt phòng
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tr>
+                <th style="width: 220px;">Mã đặt phòng</th>
+                <td>@Model.BookingCode</td>
+            </tr>
+            <tr>
+                <th>Khách hàng</th>
+                <td>
+                    @Model.CustomerName <br />
+                    <small>@Model.CustomerPhone</small> <br />
+                    <small>@Model.CustomerEmail</small>
+                </td>
+            </tr>
+            <tr>
+                <th>Phòng</th>
+                <td>Phòng @Model.RoomNumber - @Model.RoomTypeName</td>
+            </tr>
+            <tr>
+                <th>Ngày nhận</th>
+                <td>@Model.CheckInDate.ToString("dd/MM/yyyy")</td>
+            </tr>
+            <tr>
+                <th>Ngày trả</th>
+                <td>@Model.CheckOutDate.ToString("dd/MM/yyyy")</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        Dịch vụ phát sinh
+    </div>
+    <div class="card-body">
+        @if (!Model.Services.Any())
+        {
+            <p class="text-muted mb-0">Không có dịch vụ phát sinh.</p>
+        }
+        else
+        {
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Dịch vụ</th>
+                        <th>Số lượng</th>
+                        <th>Đơn giá</th>
+                        <th>Thành tiền</th>
+                        <th>Thời gian dùng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var service in Model.Services)
+                    {
+                        <tr>
+                            <td>@service.ServiceName</td>
+                            <td>@service.Quantity</td>
+                            <td>@service.UnitPrice.ToString("N0") đ</td>
+                            <td>@service.TotalPrice.ToString("N0") đ</td>
+                            <td>@service.UsedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        Chi phí
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <tr>
+                <th style="width: 220px;">Tiền phòng</th>
+                <td>@Model.RoomAmount.ToString("N0") đ</td>
+            </tr>
+            <tr>
+                <th>Tiền dịch vụ</th>
+                <td>@Model.ServiceAmount.ToString("N0") đ</td>
+            </tr>
+            <tr>
+                <th>Giảm giá</th>
+                <td>@Model.DiscountAmount.ToString("N0") đ</td>
+            </tr>
+            <tr>
+                <th>Thuế</th>
+                <td>@Model.TaxAmount.ToString("N0") đ</td>
+            </tr>
+            <tr>
+                <th>Tổng tiền</th>
+                <td>
+                    <strong>@Model.TotalAmount.ToString("N0") đ</strong>
+                </td>
+            </tr>
+            <tr>
+                <th>Đã thanh toán</th>
+                <td>@Model.PaidAmount.ToString("N0") đ</td>
+            </tr>
+            <tr>
+                <th>Còn lại</th>
+                <td>@Model.RemainingAmount.ToString("N0") đ</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        Lịch sử thanh toán
+    </div>
+    <div class="card-body">
+        @if (!Model.Payments.Any())
+        {
+            <p class="text-muted mb-0">Chưa có thanh toán.</p>
+        }
+        else
+        {
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Mã thanh toán</th>
+                        <th>Phương thức</th>
+                        <th>Số tiền</th>
+                        <th>Trạng thái</th>
+                        <th>Người thu</th>
+                        <th>Thời gian</th>
+                        <th>Ghi chú</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var payment in Model.Payments)
+                    {
+                        <tr>
+                            <td>@payment.PaymentCode</td>
+                            <td>@payment.PaymentMethod</td>
+                            <td>@payment.Amount.ToString("N0") đ</td>
+                            <td>@payment.Status</td>
+                            <td>@(payment.CreatedByName ?? "Không xác định")</td>
+                            <td>@payment.PaidAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@payment.Note</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

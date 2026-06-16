@@ -1,0 +1,166 @@
+@model HotelManagement.ViewModels.Admin.CustomerDetailViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết khách hàng";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="page-title mb-0">Chi tiết khách hàng</h2>
+
+    <div class="d-flex gap-2">
+        <a asp-controller="Admin"
+           asp-action="EditCustomer"
+           asp-route-id="@Model.Id"
+           class="btn btn-primary">
+            Sửa khách hàng
+        </a>
+
+        <a asp-controller="Admin"
+           asp-action="Customers"
+           class="btn btn-secondary">
+            Quay lại
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card card-dashboard">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Thông tin khách hàng</h5>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Họ tên</div>
+                    <div class="col-md-8 fw-semibold">@Model.FullName</div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Email</div>
+                    <div class="col-md-8">@Model.Email</div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Số điện thoại</div>
+                    <div class="col-md-8">
+                        @(string.IsNullOrWhiteSpace(Model.PhoneNumber) ? "-" : Model.PhoneNumber)
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">CCCD/CMND</div>
+                    <div class="col-md-8">
+                        @(string.IsNullOrWhiteSpace(Model.IdentityNumber) ? "-" : Model.IdentityNumber)
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Địa chỉ</div>
+                    <div class="col-md-8">
+                        @(string.IsNullOrWhiteSpace(Model.Address) ? "-" : Model.Address)
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Trạng thái</div>
+                    <div class="col-md-8">
+                        @if (Model.Status == "Active")
+                        {
+                            <span class="badge bg-success">Đang hoạt động</span>
+                        }
+                        else if (Model.Status == "Locked")
+                        {
+                            <span class="badge bg-danger">Đã khóa</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Ngưng dùng</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4 text-muted">Ngày tạo</div>
+                    <div class="col-md-8">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 text-muted">Cập nhật</div>
+                    <div class="col-md-8">
+                        @(Model.UpdatedAt.HasValue ? Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm") : "-")
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-dashboard mt-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Thống kê</h5>
+
+                <div class="row mb-3">
+                    <div class="col-md-6 text-muted">Tổng booking</div>
+                    <div class="col-md-6 fw-semibold">@Model.BookingCount</div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 text-muted">Tổng giá trị đặt phòng</div>
+                    <div class="col-md-6 fw-semibold">
+                        @Model.TotalBookingAmount.ToString("N0") VNĐ
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card card-dashboard">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Lịch sử đặt phòng gần đây</h5>
+
+                @if (!Model.RecentBookings.Any())
+                {
+                    <div class="alert alert-info mb-0">
+                        Khách hàng này chưa có booking nào.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Mã booking</th>
+                                    <th>Phòng</th>
+                                    <th>Ngày nhận</th>
+                                    <th>Ngày trả</th>
+                                    <th>Trạng thái</th>
+                                    <th class="text-end">Tổng tiền</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach (var booking in Model.RecentBookings)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@booking.BookingCode</td>
+                                        <td>
+                                            <div>@booking.RoomNumber</div>
+                                            <div class="text-muted small">@booking.RoomTypeName</div>
+                                        </td>
+                                        <td>@booking.CheckInDate.ToString("dd/MM/yyyy")</td>
+                                        <td>@booking.CheckOutDate.ToString("dd/MM/yyyy")</td>
+                                        <td>
+                                            <span class="badge bg-secondary">@booking.Status</span>
+                                        </td>
+                                        <td class="text-end">
+                                            @booking.TotalAmount.ToString("N0") VNĐ
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

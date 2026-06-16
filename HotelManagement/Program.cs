@@ -2,6 +2,7 @@ using HotelManagement.Data;
 using HotelManagement.Services;
 using HotelManagement.Services.Admin;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -29,16 +30,31 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AdminDashboardService>();
 builder.Services.AddScoped<RoomTypeManagementService>();
 builder.Services.AddScoped<RoomManagementService>();
+builder.Services.AddScoped<ServiceManagementService>();
+builder.Services.AddScoped<EmployeeManagementService>();
+builder.Services.AddScoped<CustomerManagementService>();
+builder.Services.AddScoped<BookingTrackingService>();
+builder.Services.AddScoped<InvoiceTrackingService>();
+builder.Services.AddScoped<RevenueReportService>();
+builder.Services.AddScoped<ActivityLogService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
         options.LoginPath = "/Auth/Login";
         options.AccessDeniedPath = "/Auth/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    })
+    .AddCookie("External")
+    .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+    {
+        options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? string.Empty;
+        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? string.Empty;
+        options.CallbackPath = "/signin-google";
+        options.SignInScheme = "External";
     });
 
 var app = builder.Build();

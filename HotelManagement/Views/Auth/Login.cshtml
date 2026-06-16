@@ -15,8 +15,16 @@
             </div>
         }
 
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">
+                @TempData["Error"]
+            </div>
+        }
+
         <form asp-action="Login" asp-controller="Auth" method="post">
             @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
 
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
@@ -38,6 +46,15 @@
             </div>
 
             <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
+        </form>
+
+        <form asp-controller="Auth" asp-action="GoogleLogin" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+
+            <button type="submit" class="btn btn-outline-danger w-100 mt-3">
+                Đăng nhập bằng Google
+            </button>
         </form>
 
         <div class="mt-3">
