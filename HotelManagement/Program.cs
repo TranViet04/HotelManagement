@@ -3,6 +3,7 @@ using HotelManagement.Services;
 using HotelManagement.Services.Admin;
 using HotelManagement.Services.Receptionist;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -30,6 +31,13 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AdminDashboardService>();
 builder.Services.AddScoped<RoomTypeManagementService>();
 builder.Services.AddScoped<RoomManagementService>();
+builder.Services.AddScoped<ServiceManagementService>();
+builder.Services.AddScoped<EmployeeManagementService>();
+builder.Services.AddScoped<CustomerManagementService>();
+builder.Services.AddScoped<BookingTrackingService>();
+builder.Services.AddScoped<InvoiceTrackingService>();
+builder.Services.AddScoped<RevenueReportService>();
+builder.Services.AddScoped<ActivityLogService>();
 builder.Services.AddScoped<ReceptionistDashboardService>();
 builder.Services.AddScoped<ReceptionistBookingService>();
 builder.Services.AddScoped<ReceptionistInvoiceService>();
@@ -37,13 +45,31 @@ builder.Services.AddScoped<ReceptionistInvoiceService>();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+var isGoogleAuthenticationConfigured =
+    !string.IsNullOrWhiteSpace(googleClientId)
+    && !string.IsNullOrWhiteSpace(googleClientSecret);
+
+var authenticationBuilder = builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
         options.LoginPath = "/Auth/Login";
         options.AccessDeniedPath = "/Auth/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    })
+    .AddCookie("External");
+
+if (isGoogleAuthenticationConfigured)
+{
+    authenticationBuilder.AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+    {
+        options.ClientId = googleClientId!;
+        options.ClientSecret = googleClientSecret!;
+        options.CallbackPath = "/signin-google";
+        options.SignInScheme = "External";
     });
+}
 
 var app = builder.Build();
 

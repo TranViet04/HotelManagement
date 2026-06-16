@@ -1,0 +1,139 @@
+@model List<HotelManagement.ViewModels.Admin.InvoiceTrackingViewModel>
+
+@{
+    ViewData["Title"] = "Theo dõi hóa đơn";
+    var selectedStatus = ViewBag.Status as string;
+}
+
+<h2 class="mb-4">Theo dõi hóa đơn</h2>
+
+<form method="get" class="row mb-3">
+    <div class="col-md-3">
+        <input type="text"
+               name="keyword"
+               value="@ViewBag.Keyword"
+               class="form-control"
+               placeholder="Mã hóa đơn, mã đặt, khách hàng, phòng..." />
+    </div>
+
+    <div class="col-md-2">
+        <select name="status" class="form-select">
+            <option value="">-- Tất cả --</option>
+            <option value="Unpaid" selected="@(selectedStatus == "Unpaid" ? "selected" : null)">Unpaid</option>
+            <option value="PartiallyPaid" selected="@(selectedStatus == "PartiallyPaid" ? "selected" : null)">PartiallyPaid</option>
+            <option value="Paid" selected="@(selectedStatus == "Paid" ? "selected" : null)">Paid</option>
+            <option value="Cancelled" selected="@(selectedStatus == "Cancelled" ? "selected" : null)">Cancelled</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <input type="date"
+               name="fromDate"
+               value="@ViewBag.FromDate"
+               class="form-control" />
+    </div>
+
+    <div class="col-md-2">
+        <input type="date"
+               name="toDate"
+               value="@ViewBag.ToDate"
+               class="form-control" />
+    </div>
+
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+            Lọc
+        </button>
+    </div>
+
+    <div class="col-md-1">
+        <a asp-controller="Admin"
+           asp-action="Invoices"
+           class="btn btn-secondary w-100">
+            Xóa
+        </a>
+    </div>
+</form>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        Chưa có hóa đơn nào phù hợp.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Mã hóa đơn</th>
+                    <th>Đặt phòng</th>
+                    <th>Khách hàng</th>
+                    <th>Phòng</th>
+                    <th>Tổng tiền</th>
+                    <th>Đã trả</th>
+                    <th>Còn lại</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày lập</th>
+                    <th style="width: 100px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong>@item.InvoiceCode</strong>
+                        </td>
+                        <td>@item.BookingCode</td>
+                        <td>
+                            @item.CustomerName <br />
+                            <small class="text-muted">@item.CustomerPhone</small>
+                        </td>
+                        <td>
+                            Phòng @item.RoomNumber <br />
+                            <small class="text-muted">@item.RoomTypeName</small>
+                        </td>
+                        <td>
+                            <strong>@item.TotalAmount.ToString("N0") đ</strong>
+                        </td>
+                        <td>@item.PaidAmount.ToString("N0") đ</td>
+                        <td>@item.RemainingAmount.ToString("N0") đ</td>
+                        <td>
+                            @if (item.Status == "Paid")
+                            {
+                                <span class="badge bg-success">Paid</span>
+                            }
+                            else if (item.Status == "Unpaid")
+                            {
+                                <span class="badge bg-warning text-dark">Unpaid</span>
+                            }
+                            else if (item.Status == "PartiallyPaid")
+                            {
+                                <span class="badge bg-info text-dark">PartiallyPaid</span>
+                            }
+                            else if (item.Status == "Cancelled")
+                            {
+                                <span class="badge bg-danger">Cancelled</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">@item.Status</span>
+                            }
+                        </td>
+                        <td>@item.IssuedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            <a asp-controller="Admin"
+                               asp-action="InvoiceDetails"
+                               asp-route-id="@item.Id"
+                               class="btn btn-sm btn-outline-primary">
+                                Chi tiết
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

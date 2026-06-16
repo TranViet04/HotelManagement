@@ -66,7 +66,7 @@ namespace HotelManagement.Services.Admin
             return await query.AnyAsync(rt => rt.Name == name);
         }
 
-        public async Task CreateAsync(RoomTypeFormViewModel model)
+        public async Task<long> CreateAsync(RoomTypeFormViewModel model)
         {
             var roomType = new RoomType
             {
@@ -82,6 +82,8 @@ namespace HotelManagement.Services.Admin
 
             _context.RoomTypes.Add(roomType);
             await _context.SaveChangesAsync();
+
+            return roomType.Id;
         }
 
         public async Task<bool> UpdateAsync(RoomTypeFormViewModel model)
