@@ -127,6 +127,7 @@ namespace HotelManagement.Services.Receptionist
                     .ThenInclude(bs => bs.Service)
                 .Include(b => b.BookingServices)
                     .ThenInclude(bs => bs.CreatedByUser)
+                .Include(b => b.Invoice)
                 .FirstOrDefaultAsync(b => b.Id == bookingId);
 
             if (booking == null)
@@ -138,6 +139,7 @@ namespace HotelManagement.Services.Receptionist
             var checkInAvailability = GetCheckInAvailability(booking);
             var addServiceAvailability = GetAddServiceAvailability(booking);
             var checkOutAvailability = GetCheckOutAvailability(booking);
+            var createInvoiceAvailability = GetCreateInvoiceAvailability(booking);
 
             return new ReceptionistBookingDetailViewModel
             {
@@ -182,6 +184,11 @@ namespace HotelManagement.Services.Receptionist
                 AddServiceBlockReason = addServiceAvailability.Reason,
                 CanCheckOut = checkOutAvailability.CanCheckOut,
                 CheckOutBlockReason = checkOutAvailability.Reason,
+                InvoiceId = booking.Invoice?.Id,
+                InvoiceCode = booking.Invoice?.InvoiceCode,
+                InvoiceStatus = booking.Invoice?.Status,
+                CanCreateInvoice = createInvoiceAvailability.CanCreateInvoice,
+                CreateInvoiceBlockReason = createInvoiceAvailability.Reason,
                 Services = booking.BookingServices
                     .OrderByDescending(bs => bs.UsedAt)
                     .Select(bs => new ReceptionistBookingServiceItemViewModel
@@ -829,6 +836,21 @@ namespace HotelManagement.Services.Receptionist
             if (booking.Status != BookingStatuses.CheckedIn)
             {
                 return (false, "Chỉ có thể check-out booking ở trạng thái Đã nhận phòng.");
+            }
+
+            return (true, null);
+        }
+
+        private static (bool CanCreateInvoice, string? Reason) GetCreateInvoiceAvailability(Booking booking)
+        {
+            if (booking.Invoice != null)
+            {
+                return (false, "Booking này đã có hóa đơn.");
+            }
+
+            if (booking.Status != BookingStatuses.CheckedOut)
+            {
+                return (false, "Chỉ có thể tạo hóa đơn cho booking đã trả phòng.");
             }
 
             return (true, null);

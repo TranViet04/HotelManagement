@@ -223,6 +223,55 @@
             </div>
         </div>
 
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                    <div>
+                        <h5 class="fw-bold mb-1">Hóa đơn</h5>
+
+                        @if (Model.InvoiceId.HasValue)
+                        {
+                            <p class="text-muted mb-0">
+                                Booking này đã có hóa đơn @Model.InvoiceCode - trạng thái @Model.InvoiceStatus.
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0">
+                                Booking này chưa có hóa đơn.
+                            </p>
+                        }
+                    </div>
+
+                    <div>
+                        @if (Model.InvoiceId.HasValue)
+                        {
+                            <a asp-controller="Receptionist"
+                               asp-action="InvoiceDetails"
+                               asp-route-id="@Model.InvoiceId.Value"
+                               class="btn btn-outline-primary">
+                                Xem hóa đơn
+                            </a>
+                        }
+                        else if (Model.CanCreateInvoice)
+                        {
+                            <form asp-controller="Receptionist"
+                                  asp-action="CreateInvoice"
+                                  asp-route-bookingId="@Model.BookingId"
+                                  method="post"
+                                  class="d-inline">
+                                @Html.AntiForgeryToken()
+
+                                <button type="submit" class="btn btn-primary">
+                                    Tạo hóa đơn
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
                 <h5 class="fw-bold mb-3">Chi phí</h5>
@@ -339,6 +388,39 @@
                                 disabled
                                 title="@Model.CheckOutBlockReason">
                             Không thể check-out
+                        </button>
+                    }
+
+                    @if (Model.InvoiceId.HasValue)
+                    {
+                        <a asp-controller="Receptionist"
+                           asp-action="InvoiceDetails"
+                           asp-route-id="@Model.InvoiceId.Value"
+                           class="btn btn-primary">
+                            Xem hóa đơn
+                        </a>
+                    }
+                    else if (Model.CanCreateInvoice)
+                    {
+                        <form asp-controller="Receptionist"
+                              asp-action="CreateInvoice"
+                              asp-route-bookingId="@Model.BookingId"
+                              method="post"
+                              class="d-inline">
+                            @Html.AntiForgeryToken()
+
+                            <button type="submit" class="btn btn-primary">
+                                Tạo hóa đơn
+                            </button>
+                        </form>
+                    }
+                    else if (Model.Status == "CheckedOut")
+                    {
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                disabled
+                                title="@Model.CreateInvoiceBlockReason">
+                            Không thể tạo hóa đơn
                         </button>
                     }
                 </div>

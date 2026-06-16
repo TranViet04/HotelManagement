@@ -12,13 +12,16 @@ namespace HotelManagement.Controllers
     {
         private readonly ReceptionistDashboardService _dashboardService;
         private readonly ReceptionistBookingService _bookingService;
+        private readonly ReceptionistInvoiceService _invoiceService;
 
         public ReceptionistController(
             ReceptionistDashboardService dashboardService,
-            ReceptionistBookingService bookingService)
+            ReceptionistBookingService bookingService,
+            ReceptionistInvoiceService invoiceService)
         {
             _dashboardService = dashboardService;
             _bookingService = bookingService;
+            _invoiceService = invoiceService;
         }
 
         public async Task<IActionResult> Dashboard()
@@ -227,9 +230,47 @@ namespace HotelManagement.Controllers
             return RedirectToAction(nameof(BookingDetails), new { id });
         }
 
-        public IActionResult Invoices()
+        [HttpGet]
+        public async Task<IActionResult> Invoices(string? keyword, string? status)
         {
-            return View("Placeholder", "Hóa đơn");
+            var model = await _invoiceService.GetInvoicesAsync(keyword, status);
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> InvoiceDetails(long id)
+        {
+            var model = await _invoiceService.GetInvoiceDetailAsync(id);
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy hóa đơn.";
+                return RedirectToAction(nameof(Invoices));
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateInvoice(long bookingId)
+        {
+            if (!TryGetCurrentUserId(out var receptionistId))
+            {
+                return Challenge();
+            }
+
+            var result = await _invoiceService.CreateInvoiceAsync(bookingId, receptionistId);
+
+            if (!result.Succeeded)
+            {
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction(nameof(BookingDetails), new { id = bookingId });
+            }
+
+            TempData["SuccessMessage"] = result.Message;
+
+            return RedirectToAction(nameof(InvoiceDetails), new { id = result.InvoiceId });
         }
 
         public IActionResult Payments()

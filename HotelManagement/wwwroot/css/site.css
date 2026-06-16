@@ -396,3 +396,31 @@ body {
     font-size: 12px;
     padding: 7px 10px;
 }
+
+.receptionist-invoices-header,
+.receptionist-invoice-detail-header {
+    border-radius: 8px;
+    background: linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%);
+}
+
+.receptionist-invoice-status {
+    font-size: 14px;
+    padding: 8px 12px;
+}
+
+.receptionist-invoices-table th,
+.receptionist-invoice-lines-table th {
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.receptionist-invoices-table td,
+.receptionist-invoice-lines-table td {
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.receptionist-invoices-table .badge {
+    font-size: 12px;
+    padding: 7px 10px;
+}

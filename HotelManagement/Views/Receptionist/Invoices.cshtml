@@ -1,0 +1,193 @@
+@model HotelManagement.ViewModels.Receptionist.ReceptionistInvoiceListViewModel
+
+@{
+    ViewData["Title"] = "Hóa đơn";
+
+    string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Unpaid" => "bg-warning text-dark",
+            "PartiallyPaid" => "bg-info text-dark",
+            "Paid" => "bg-success",
+            "Cancelled" => "bg-secondary",
+            _ => "bg-light text-dark"
+        };
+    }
+
+    string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Unpaid" => "Chưa thanh toán",
+            "PartiallyPaid" => "Thanh toán một phần",
+            "Paid" => "Đã thanh toán",
+            "Cancelled" => "Đã hủy",
+            _ => status
+        };
+    }
+}
+
+<section class="receptionist-invoices-header shadow-sm p-4 p-lg-5 mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <div class="text-uppercase text-primary fw-semibold mb-2">
+                Hóa đơn
+            </div>
+
+            <h1 class="fw-bold mb-3">
+                Danh sách hóa đơn
+            </h1>
+
+            <p class="text-muted mb-0">
+                Theo dõi hóa đơn đã tạo từ các booking đã trả phòng.
+            </p>
+        </div>
+
+        <div class="col-lg-4 text-lg-end">
+            <a asp-controller="Receptionist"
+               asp-action="Bookings"
+               asp-route-status="CheckedOut"
+               class="btn btn-outline-primary">
+                Booking đã trả phòng
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <form asp-controller="Receptionist" asp-action="Invoices" method="get" class="row g-3">
+            <div class="col-lg-6">
+                <label class="form-label">Từ khóa</label>
+                <input type="text"
+                       name="keyword"
+                       class="form-control"
+                       value="@Model.Keyword"
+                       placeholder="Mã hóa đơn, booking, khách hàng, SĐT, phòng" />
+            </div>
+
+            <div class="col-lg-3">
+                <label class="form-label">Trạng thái</label>
+                <select name="status" class="form-select" asp-items="Model.StatusOptions"></select>
+            </div>
+
+            <div class="col-lg-3 d-flex align-items-end">
+                <div class="d-grid gap-2 w-100">
+                    <button type="submit" class="btn btn-primary">
+                        Lọc
+                    </button>
+
+                    <a asp-controller="Receptionist"
+                       asp-action="Invoices"
+                       class="btn btn-outline-secondary">
+                        Xóa lọc
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        @if (Model.Invoices == null || !Model.Invoices.Any())
+        {
+            <div class="p-4">
+                <div class="alert alert-info mb-0">
+                    Chưa có hóa đơn phù hợp.
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="p-4 border-bottom">
+                <h5 class="fw-bold mb-1">Kết quả</h5>
+                <p class="text-muted mb-0">
+                    Tìm thấy @Model.Invoices.Count hóa đơn.
+                </p>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 receptionist-invoices-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mã hóa đơn</th>
+                            <th>Booking</th>
+                            <th>Khách hàng</th>
+                            <th>Phòng</th>
+                            <th>Tổng tiền</th>
+                            <th>Còn lại</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày lập</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var invoice in Model.Invoices)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@invoice.InvoiceCode</div>
+                                    <div class="text-muted small">
+                                        Lập bởi @(invoice.IssuedByName ?? "Không xác định")
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <a asp-controller="Receptionist"
+                                       asp-action="BookingDetails"
+                                       asp-route-id="@invoice.BookingId"
+                                       class="fw-semibold text-decoration-none">
+                                        @invoice.BookingCode
+                                    </a>
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold">@invoice.CustomerName</div>
+                                    <div class="text-muted small">
+                                        @(invoice.CustomerPhoneNumber ?? "Chưa có SĐT")
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div>@invoice.RoomTypeName</div>
+                                    <div class="text-muted small">Phòng @invoice.RoomNumber</div>
+                                </td>
+
+                                <td>
+                                    <strong class="text-primary">@invoice.TotalAmount.ToString("N0") VND</strong>
+                                </td>
+
+                                <td>
+                                    <strong class="text-danger">@invoice.RemainingAmount.ToString("N0") VND</strong>
+                                </td>
+
+                                <td>
+                                    <span class="badge @GetStatusBadgeClass(invoice.Status)">
+                                        @GetStatusText(invoice.Status)
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div>@invoice.IssuedAt.ToString("dd/MM/yyyy")</div>
+                                    <div class="text-muted small">@invoice.IssuedAt.ToString("HH:mm")</div>
+                                </td>
+
+                                <td class="text-end">
+                                    <a asp-controller="Receptionist"
+                                       asp-action="InvoiceDetails"
+                                       asp-route-id="@invoice.InvoiceId"
+                                       class="btn btn-outline-primary btn-sm">
+                                        Xem
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>

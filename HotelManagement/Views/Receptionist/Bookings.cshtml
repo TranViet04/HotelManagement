@@ -259,6 +259,16 @@
                                                 Check-out
                                             </a>
                                         }
+
+                                        @if (booking.Status == "CheckedOut")
+                                        {
+                                            <a asp-controller="Receptionist"
+                                               asp-action="BookingDetails"
+                                               asp-route-id="@booking.BookingId"
+                                               class="btn btn-primary btn-sm">
+                                                Hóa đơn
+                                            </a>
+                                        }
                                     </div>
                                 </td>
                             </tr>

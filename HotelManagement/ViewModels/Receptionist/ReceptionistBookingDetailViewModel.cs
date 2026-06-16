@@ -80,6 +80,16 @@ namespace HotelManagement.ViewModels.Receptionist
 
         public string? CheckOutBlockReason { get; set; }
 
+        public long? InvoiceId { get; set; }
+
+        public string? InvoiceCode { get; set; }
+
+        public string? InvoiceStatus { get; set; }
+
+        public bool CanCreateInvoice { get; set; }
+
+        public string? CreateInvoiceBlockReason { get; set; }
+
         public List<ReceptionistBookingServiceItemViewModel> Services { get; set; } = new();
     }
 }
