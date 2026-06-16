@@ -1,6 +1,7 @@
 using HotelManagement.Data;
 using HotelManagement.Services;
 using HotelManagement.Services.Admin;
+using HotelManagement.Services.Customer;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.EntityFrameworkCore;
@@ -37,25 +38,39 @@ builder.Services.AddScoped<BookingTrackingService>();
 builder.Services.AddScoped<InvoiceTrackingService>();
 builder.Services.AddScoped<RevenueReportService>();
 builder.Services.AddScoped<ActivityLogService>();
+builder.Services.AddScoped<PublicHomeService>();
+builder.Services.AddScoped<PublicRoomService>();
+builder.Services.AddScoped<CustomerBookingService>();
+builder.Services.AddScoped<CustomerProfileService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
+var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+var isGoogleAuthenticationConfigured =
+    !string.IsNullOrWhiteSpace(googleClientId)
+    && !string.IsNullOrWhiteSpace(googleClientSecret);
+
+var authenticationBuilder = builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
     {
         options.LoginPath = "/Auth/Login";
         options.AccessDeniedPath = "/Auth/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
     })
-    .AddCookie("External")
-    .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+    .AddCookie("External");
+
+if (isGoogleAuthenticationConfigured)
+{
+    authenticationBuilder.AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
     {
-        options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? string.Empty;
-        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? string.Empty;
+        options.ClientId = googleClientId!;
+        options.ClientSecret = googleClientSecret!;
         options.CallbackPath = "/signin-google";
         options.SignInScheme = "External";
     });
+}
 
 var app = builder.Build();
 

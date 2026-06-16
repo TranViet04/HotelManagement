@@ -1,0 +1,189 @@
+@model HotelManagement.ViewModels.Customer.CancelBookingViewModel
+
+@{
+    ViewData["Title"] = "Hủy đặt phòng";
+
+    string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Pending" => "bg-warning text-dark",
+            "Confirmed" => "bg-primary",
+            "CheckedIn" => "bg-info text-dark",
+            "CheckedOut" => "bg-success",
+            "Cancelled" => "bg-secondary",
+            _ => "bg-light text-dark"
+        };
+    }
+
+    string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Pending" => "Chờ xác nhận",
+            "Confirmed" => "Đã xác nhận",
+            "CheckedIn" => "Đã nhận phòng",
+            "CheckedOut" => "Đã trả phòng",
+            "Cancelled" => "Đã hủy",
+            _ => status
+        };
+    }
+}
+
+<section class="cancel-booking-header shadow-sm p-4 p-lg-5 mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <div class="text-uppercase text-danger fw-semibold mb-2">
+                Hủy đặt phòng
+            </div>
+
+            <h1 class="fw-bold mb-3">
+                @Model.BookingCode
+            </h1>
+
+            <p class="text-muted mb-0">
+                Kiểm tra thông tin đặt phòng trước khi xác nhận hủy.
+            </p>
+        </div>
+
+        <div class="col-lg-4 text-lg-end">
+            <a asp-controller="Bookings"
+               asp-action="Details"
+               asp-route-id="@Model.BookingId"
+               class="btn btn-outline-secondary">
+                Quay lại chi tiết
+            </a>
+        </div>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">Thông tin đặt phòng</h5>
+
+                <div class="room-info-list mb-3">
+                    <div>
+                        <span class="text-muted">Mã đặt phòng:</span>
+                        <strong>@Model.BookingCode</strong>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Loại phòng:</span>
+                        <strong>@Model.RoomTypeName</strong>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Số phòng:</span>
+                        <strong>@Model.RoomNumber</strong>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Ngày nhận:</span>
+                        <strong>@Model.CheckInDate.ToString("dd/MM/yyyy")</strong>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Ngày trả:</span>
+                        <strong>@Model.CheckOutDate.ToString("dd/MM/yyyy")</strong>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Số đêm:</span>
+                        <strong>@Model.Nights</strong>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Số khách:</span>
+                        <strong>@Model.Adults người lớn, @Model.Children trẻ em</strong>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Tổng tiền:</span>
+                        <strong>@Model.TotalAmount.ToString("N0") VND</strong>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Trạng thái:</span>
+                        <strong>
+                            <span class="badge @GetStatusBadgeClass(Model.Status)">
+                                @GetStatusText(Model.Status)
+                            </span>
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning mb-0">
+                    Sau khi hủy, đặt phòng sẽ chuyển sang trạng thái <strong>Đã hủy</strong>.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                @if (!Model.CanCancel)
+                {
+                    <div class="alert alert-danger">
+                        @Model.CancelBlockReason
+                    </div>
+
+                    <a asp-controller="Bookings"
+                       asp-action="Details"
+                       asp-route-id="@Model.BookingId"
+                       class="btn btn-outline-secondary">
+                        Quay lại chi tiết
+                    </a>
+                }
+                else
+                {
+                    <h5 class="fw-bold mb-3">Xác nhận hủy đặt phòng</h5>
+
+                    <form asp-controller="Bookings" asp-action="Cancel" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <input asp-for="BookingId" type="hidden" />
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="CancelReason" class="form-label">
+                                Lý do hủy
+                            </label>
+
+                            <textarea asp-for="CancelReason"
+                                      class="form-control"
+                                      rows="5"
+                                      placeholder="Nhập lý do hủy đặt phòng..."></textarea>
+
+                            <span asp-validation-for="CancelReason" class="text-danger"></span>
+                        </div>
+
+                        <div class="alert alert-danger">
+                            Vui lòng xác nhận cẩn thận. Sau khi hủy, bạn không thể tự khôi phục đặt phòng này.
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                Xác nhận hủy đặt phòng
+                            </button>
+
+                            <a asp-controller="Bookings"
+                               asp-action="Details"
+                               asp-route-id="@Model.BookingId"
+                               class="btn btn-outline-secondary">
+                                Không hủy nữa
+                            </a>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

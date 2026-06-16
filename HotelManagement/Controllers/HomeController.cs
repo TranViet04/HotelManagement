@@ -1,4 +1,5 @@
 using HotelManagement.Models;
+using HotelManagement.Services.Customer;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -7,15 +8,20 @@ namespace HotelManagement.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly PublicHomeService _publicHomeService;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(
+            ILogger<HomeController> logger,
+            PublicHomeService publicHomeService)
         {
             _logger = logger;
+            _publicHomeService = publicHomeService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View();
+            var model = await _publicHomeService.GetHomePageAsync();
+            return View(model);
         }
 
         public IActionResult Privacy()
