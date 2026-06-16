@@ -376,3 +376,23 @@ body {
     font-size: 12px;
     padding: 7px 10px;
 }
+
+.receptionist-checkout-header {
+    border-radius: 8px;
+    background: linear-gradient(135deg, #ffffff 0%, #fff5f5 100%);
+}
+
+.receptionist-checkout-table th {
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.receptionist-checkout-table td {
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.receptionist-checkout-table .badge {
+    font-size: 12px;
+    padding: 7px 10px;
+}

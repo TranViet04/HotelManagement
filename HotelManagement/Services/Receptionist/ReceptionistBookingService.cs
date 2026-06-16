@@ -137,6 +137,7 @@ namespace HotelManagement.Services.Receptionist
             var canConfirm = booking.Status == BookingStatuses.Pending;
             var checkInAvailability = GetCheckInAvailability(booking);
             var addServiceAvailability = GetAddServiceAvailability(booking);
+            var checkOutAvailability = GetCheckOutAvailability(booking);
 
             return new ReceptionistBookingDetailViewModel
             {
@@ -179,6 +180,8 @@ namespace HotelManagement.Services.Receptionist
                 CheckInBlockReason = checkInAvailability.Reason,
                 CanAddService = addServiceAvailability.CanAddService,
                 AddServiceBlockReason = addServiceAvailability.Reason,
+                CanCheckOut = checkOutAvailability.CanCheckOut,
+                CheckOutBlockReason = checkOutAvailability.Reason,
                 Services = booking.BookingServices
                     .OrderByDescending(bs => bs.UsedAt)
                     .Select(bs => new ReceptionistBookingServiceItemViewModel
@@ -208,6 +211,66 @@ namespace HotelManagement.Services.Receptionist
                 .Where(b => b.Status == BookingStatuses.CheckedIn)
                 .OrderByDescending(b => b.CheckedInAt)
                 .ThenByDescending(b => b.CreatedAt)
+                .Select(b => new
+                {
+                    BookingId = b.Id,
+                    BookingCode = b.BookingCode,
+                    CustomerName = b.Customer != null ? b.Customer.FullName : "Không xác định",
+                    CustomerPhoneNumber = b.Customer != null ? b.Customer.PhoneNumber : null,
+                    CustomerEmail = b.Customer != null ? b.Customer.Email : null,
+                    RoomNumber = b.Room != null ? b.Room.RoomNumber : "Không xác định",
+                    RoomTypeName = b.Room != null && b.Room.RoomType != null
+                        ? b.Room.RoomType.Name
+                        : "Không xác định",
+                    CheckInDate = b.CheckInDate,
+                    CheckOutDate = b.CheckOutDate,
+                    Adults = b.Adults,
+                    Children = b.Children,
+                    Status = b.Status,
+                    TotalAmount = b.TotalAmount,
+                    CreatedAt = b.CreatedAt
+                })
+                .ToListAsync();
+
+            return bookingRows
+                .Select(b => new ReceptionistBookingListItemViewModel
+                {
+                    BookingId = b.BookingId,
+                    BookingCode = b.BookingCode,
+                    CustomerName = b.CustomerName,
+                    CustomerPhoneNumber = b.CustomerPhoneNumber,
+                    CustomerEmail = b.CustomerEmail,
+                    RoomNumber = b.RoomNumber,
+                    RoomTypeName = b.RoomTypeName,
+                    CheckInDate = b.CheckInDate,
+                    CheckOutDate = b.CheckOutDate,
+                    Nights = Math.Max(0, (b.CheckOutDate.Date - b.CheckInDate.Date).Days),
+                    Adults = b.Adults,
+                    Children = b.Children,
+                    Status = b.Status,
+                    TotalAmount = b.TotalAmount,
+                    CreatedAt = b.CreatedAt
+                })
+                .ToList();
+        }
+
+        public async Task<List<ReceptionistBookingListItemViewModel>> GetTodayCheckOutsAsync()
+        {
+            var today = DateTime.Today;
+            var tomorrow = today.AddDays(1);
+
+            var bookingRows = await _context.Bookings
+                .AsNoTracking()
+                .Include(b => b.Customer)
+                .Include(b => b.Room)
+                    .ThenInclude(r => r!.RoomType)
+                .Where(b =>
+                    b.Status == BookingStatuses.CheckedIn
+                    && b.CheckOutDate >= today
+                    && b.CheckOutDate < tomorrow
+                )
+                .OrderBy(b => b.CheckOutDate)
+                .ThenBy(b => b.CreatedAt)
                 .Select(b => new
                 {
                     BookingId = b.Id,
@@ -607,6 +670,61 @@ namespace HotelManagement.Services.Receptionist
             );
         }
 
+        public async Task<ReceptionistBookingResult> CheckOutBookingAsync(long bookingId, long receptionistId)
+        {
+            var booking = await _context.Bookings
+                .Include(b => b.Room)
+                .FirstOrDefaultAsync(b => b.Id == bookingId);
+
+            if (booking == null)
+            {
+                return ReceptionistBookingResult.Failure("Không tìm thấy booking.");
+            }
+
+            var checkOutAvailability = GetCheckOutAvailability(booking);
+
+            if (!checkOutAvailability.CanCheckOut)
+            {
+                return ReceptionistBookingResult.Failure(checkOutAvailability.Reason ?? "Booking không thể check-out.");
+            }
+
+            if (booking.Room == null)
+            {
+                return ReceptionistBookingResult.Failure("Booking không có thông tin phòng hợp lệ.");
+            }
+
+            if (booking.Room.Status != RoomStatuses.Occupied)
+            {
+                return ReceptionistBookingResult.Failure("Phòng không ở trạng thái đang ở, không thể check-out.");
+            }
+
+            var now = DateTime.Now;
+            booking.Status = BookingStatuses.CheckedOut;
+            booking.CheckedOutAt = now;
+            booking.UpdatedAt = now;
+
+            booking.Room.Status = RoomStatuses.Cleaning;
+            booking.Room.UpdatedAt = now;
+
+            _context.ActivityLogs.Add(new ActivityLog
+            {
+                UserId = receptionistId,
+                Action = "CheckOutBooking",
+                EntityName = "Booking",
+                EntityId = booking.Id,
+                Description = $"Receptionist check-out booking {booking.BookingCode}, phòng {booking.Room.RoomNumber}",
+                CreatedAt = now
+            });
+
+            await _context.SaveChangesAsync();
+
+            return ReceptionistBookingResult.Success(
+                booking.Id,
+                booking.BookingCode,
+                $"Đã check-out booking {booking.BookingCode}."
+            );
+        }
+
         private static List<SelectListItem> GetStatusOptions(string? selectedStatus)
         {
             return new List<SelectListItem>
@@ -701,6 +819,16 @@ namespace HotelManagement.Services.Receptionist
             if (booking.Status != BookingStatuses.CheckedIn)
             {
                 return (false, "Chỉ có thể thêm dịch vụ cho booking đang ở trạng thái Đã nhận phòng.");
+            }
+
+            return (true, null);
+        }
+
+        private static (bool CanCheckOut, string? Reason) GetCheckOutAvailability(Booking booking)
+        {
+            if (booking.Status != BookingStatuses.CheckedIn)
+            {
+                return (false, "Chỉ có thể check-out booking ở trạng thái Đã nhận phòng.");
             }
 
             return (true, null);

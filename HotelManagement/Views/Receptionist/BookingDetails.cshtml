@@ -317,6 +317,30 @@
                             Không thể thêm dịch vụ
                         </button>
                     }
+
+                    @if (Model.CanCheckOut)
+                    {
+                        <form asp-controller="Receptionist"
+                              asp-action="CheckOutBooking"
+                              asp-route-id="@Model.BookingId"
+                              method="post"
+                              class="d-inline">
+                            @Html.AntiForgeryToken()
+
+                            <button type="submit" class="btn btn-danger">
+                                Check-out
+                            </button>
+                        </form>
+                    }
+                    else if (Model.Status == "CheckedIn")
+                    {
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                disabled
+                                title="@Model.CheckOutBlockReason">
+                            Không thể check-out
+                        </button>
+                    }
                 </div>
             </div>
         </div>

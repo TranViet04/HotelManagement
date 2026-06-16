@@ -114,9 +114,11 @@ namespace HotelManagement.Controllers
             return View(model);
         }
 
-        public IActionResult TodayCheckOuts()
+        [HttpGet]
+        public async Task<IActionResult> TodayCheckOuts()
         {
-            return View("Placeholder", "Danh sách khách trả phòng hôm nay");
+            var model = await _bookingService.GetTodayCheckOutsAsync();
+            return View(model);
         }
 
         public IActionResult Rooms()
@@ -201,6 +203,28 @@ namespace HotelManagement.Controllers
             TempData["SuccessMessage"] = result.Message;
 
             return RedirectToAction(nameof(BookingDetails), new { id = model.BookingId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckOutBooking(long id)
+        {
+            if (!TryGetCurrentUserId(out var receptionistId))
+            {
+                return Challenge();
+            }
+
+            var result = await _bookingService.CheckOutBookingAsync(id, receptionistId);
+
+            if (!result.Succeeded)
+            {
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction(nameof(BookingDetails), new { id });
+            }
+
+            TempData["SuccessMessage"] = result.Message;
+
+            return RedirectToAction(nameof(BookingDetails), new { id });
         }
 
         public IActionResult Invoices()
