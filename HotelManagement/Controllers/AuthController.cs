@@ -29,11 +29,16 @@ namespace HotelManagement.Controllers
         }
 
         [HttpGet]
-        public IActionResult Login(string? returnUrl = null)
+        public IActionResult Login(string? returnUrl = null, string? externalLoginError = null)
         {
             if (User.Identity != null && User.Identity.IsAuthenticated)
             {
                 return RedirectByRole();
+            }
+
+            if (!string.IsNullOrWhiteSpace(externalLoginError))
+            {
+                TempData["Error"] = "Đăng nhập Google thất bại. Vui lòng thử lại hoặc đăng nhập bằng email/mật khẩu.";
             }
 
             ViewBag.ReturnUrl = returnUrl;

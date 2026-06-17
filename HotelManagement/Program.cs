@@ -7,6 +7,7 @@ using HotelManagement.Services.Customer;
 using HotelManagement.Services.Receptionist;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -34,6 +35,16 @@ builder.Services.Configure<HotelManagement.Configuration.EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
 builder.Services.Configure<HotelManagement.Configuration.SepaySettings>(
     builder.Configuration.GetSection("SepaySettings"));
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor
+        | ForwardedHeaders.XForwardedProto
+        | ForwardedHeaders.XForwardedHost;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 builder.Services.AddScoped<HotelManagement.Services.Email.EmailService>();
 builder.Services.AddScoped<HotelManagement.Services.Payments.PaymentService>();
@@ -77,8 +88,15 @@ var authenticationBuilder = builder.Services.AddAuthentication(CookieAuthenticat
         options.LoginPath = "/Auth/Login";
         options.AccessDeniedPath = "/Auth/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     })
-    .AddCookie("External");
+    .AddCookie("External", options =>
+    {
+        options.Cookie.Name = ".HotelManagement.External";
+        options.Cookie.SameSite = SameSiteMode.None;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    });
 
 if (isGoogleAuthenticationConfigured)
 {
@@ -88,6 +106,15 @@ if (isGoogleAuthenticationConfigured)
         options.ClientSecret = googleClientSecret!;
         options.CallbackPath = "/signin-google";
         options.SignInScheme = "External";
+        options.CorrelationCookie.SameSite = SameSiteMode.None;
+        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.CorrelationCookie.HttpOnly = true;
+        options.Events.OnRemoteFailure = context =>
+        {
+            context.HandleResponse();
+            context.Response.Redirect("/Auth/Login?externalLoginError=Google");
+            return Task.CompletedTask;
+        };
     });
 }
 
@@ -101,6 +128,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
