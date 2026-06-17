@@ -13,13 +13,16 @@ namespace HotelManagement.Controllers
     {
         private readonly ChatService _chatService;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly ILogger<ChatUploadController> _logger;
 
         public ChatUploadController(
             ChatService chatService,
-            IHubContext<ChatHub> hubContext)
+            IHubContext<ChatHub> hubContext,
+            ILogger<ChatUploadController> logger)
         {
             _chatService = chatService;
             _hubContext = hubContext;
+            _logger = logger;
         }
 
         [HttpPost("UploadImage")]
@@ -36,13 +39,23 @@ namespace HotelManagement.Controllers
                     role,
                     image);
 
-                await _hubContext.Clients
-                    .Group(ChatHub.GetConversationGroupName(conversationId))
-                    .SendAsync("ReceiveMessage", message);
+                try
+                {
+                    await _hubContext.Clients
+                        .Group(ChatHub.GetConversationGroupName(conversationId))
+                        .SendAsync("ReceiveMessage", message);
 
-                await _hubContext.Clients
-                    .Group(ChatHub.ReceptionistsGroupName)
-                    .SendAsync("ConversationUpdated", conversationId);
+                    await _hubContext.Clients
+                        .Group(ChatHub.ReceptionistsGroupName)
+                        .SendAsync("ConversationUpdated", conversationId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Image message {MessageId} was saved, but realtime notification failed.",
+                        message.Id);
+                }
 
                 return Json(new
                 {

@@ -157,7 +157,7 @@ namespace HotelManagement.Services.Chat
 
         public async Task<List<ChatMessageViewModel>> GetMessagesAsync(long conversationId, long currentUserId)
         {
-            return await _context.ChatMessages
+            var messages = await _context.ChatMessages
                 .AsNoTracking()
                 .Where(m => m.ConversationId == conversationId)
                 .OrderBy(m => m.CreatedAt)
@@ -172,10 +172,16 @@ namespace HotelManagement.Services.Chat
                     Content = m.Content,
                     ImageUrl = m.ImageUrl,
                     OriginalFileName = m.OriginalFileName,
-                    IsMine = m.SenderId == currentUserId,
                     CreatedAt = m.CreatedAt
                 })
                 .ToListAsync();
+
+            foreach (var message in messages)
+            {
+                message.IsMine = message.SenderId == currentUserId;
+            }
+
+            return messages;
         }
 
         public async Task<ChatRealtimeMessageViewModel> SendTextMessageAsync(
