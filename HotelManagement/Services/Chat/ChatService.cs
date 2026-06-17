@@ -12,7 +12,16 @@ namespace HotelManagement.Services.Chat
 
         private static readonly string[] AllowedImageExtensions = [".jpg", ".jpeg", ".png", ".webp"];
 
-        private static readonly string[] AllowedImageContentTypes = ["image/jpeg", "image/png", "image/webp"];
+        private static readonly string[] AllowedImageContentTypes =
+        [
+            "image/jpeg",
+            "image/jpg",
+            "image/pjpeg",
+            "image/png",
+            "image/x-png",
+            "image/webp",
+            "application/octet-stream"
+        ];
 
         private readonly HotelDbContext _context;
         private readonly IWebHostEnvironment _environment;
@@ -246,7 +255,10 @@ namespace HotelManagement.Services.Chat
                 throw new InvalidOperationException("Only .jpg, .jpeg, .png, and .webp images are allowed.");
             }
 
-            if (!AllowedImageContentTypes.Contains(image.ContentType.ToLowerInvariant()))
+            var contentType = image.ContentType?.ToLowerInvariant();
+
+            if (!string.IsNullOrWhiteSpace(contentType)
+                && !AllowedImageContentTypes.Contains(contentType))
             {
                 throw new InvalidOperationException("Invalid image format.");
             }

@@ -36,6 +36,9 @@ appsettings.*.Local.json
 HotelManagement/wwwroot/images/rooms/*
 !HotelManagement/wwwroot/images/rooms/.gitkeep
 
+## Uploaded chat images
+HotelManagement/wwwroot/uploads/
+
 ## OS files
 .DS_Store
 Thumbs.db

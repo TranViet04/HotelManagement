@@ -24,7 +24,7 @@
         <div id="chatMessages" class="chat-messages">
             @foreach (var message in Model.Messages)
             {
-                <div class="chat-message @(message.IsMine ? "mine" : "theirs")">
+                <div class="chat-message @(message.IsMine ? "mine" : "theirs")" data-message-id="@message.Id">
                     <div class="chat-bubble">
                         <div class="chat-meta">
                             <strong>@message.SenderName</strong>
@@ -99,10 +99,18 @@
         }
 
         function appendMessage(message) {
+            if (message.id && document.querySelector(`[data-message-id="${message.id}"]`)) {
+                return;
+            }
+
             const isMine = Number(message.senderId) === Number(currentUserId);
 
             const wrapper = document.createElement("div");
             wrapper.className = "chat-message " + (isMine ? "mine" : "theirs");
+
+            if (message.id) {
+                wrapper.dataset.messageId = message.id;
+            }
 
             const bubble = document.createElement("div");
             bubble.className = "chat-bubble";
@@ -199,11 +207,18 @@
                 });
 
                 if (!response.ok) {
-                    const result = await response.json();
+                    let result = {};
+                    try {
+                        result = await response.json();
+                    } catch {
+                    }
+
                     errorBox.textContent = result.message || "Không gửi được ảnh.";
                     return;
                 }
 
+                const result = await response.json();
+                appendMessage(result.message);
                 input.value = "";
             } catch (err) {
                 console.error(err);
