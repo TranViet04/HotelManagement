@@ -234,6 +234,12 @@
                             <p class="text-muted mb-0">
                                 Booking này đã có hóa đơn @Model.InvoiceCode - trạng thái @Model.InvoiceStatus.
                             </p>
+                            @if (Model.InvoiceRemainingAmount > 0)
+                            {
+                                <p class="text-danger fw-bold mt-1 mb-0">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> Dư nợ chưa thanh toán: @Model.InvoiceRemainingAmount.ToString("N0") VND
+                                </p>
+                            }
                         }
                         else
                         {
@@ -243,9 +249,18 @@
                         }
                     </div>
 
-                    <div>
+                    <div class="d-flex gap-2">
                         @if (Model.InvoiceId.HasValue)
                         {
+                            @if (Model.InvoiceRemainingAmount > 0)
+                            {
+                                <a asp-controller="Receptionist"
+                                   asp-action="RecordPayment"
+                                   asp-route-invoiceId="@Model.InvoiceId.Value"
+                                   class="btn btn-warning fw-bold">
+                                    Thanh toán nợ
+                                </a>
+                            }
                             <a asp-controller="Receptionist"
                                asp-action="InvoiceDetails"
                                asp-route-id="@Model.InvoiceId.Value"
@@ -292,6 +307,22 @@
                     <span>Tổng cộng</span>
                     <strong>@Model.TotalAmount.ToString("N0") VND</strong>
                 </div>
+
+                @if (Model.InvoiceId.HasValue)
+                {
+                    <div class="booking-cost-row mt-2 text-success">
+                        <span>Đã thanh toán</span>
+                        <strong>@Model.InvoicePaidAmount.ToString("N0") VND</strong>
+                    </div>
+                    
+                    @if (Model.InvoiceRemainingAmount > 0)
+                    {
+                        <div class="booking-cost-row mt-2 text-danger fw-bold">
+                            <span>Dư nợ (phát sinh)</span>
+                            <strong>@Model.InvoiceRemainingAmount.ToString("N0") VND</strong>
+                        </div>
+                    }
+                }
 
                 <div class="mt-4 d-flex flex-wrap gap-2">
                     <a asp-controller="Receptionist"
@@ -393,6 +424,15 @@
 
                     @if (Model.InvoiceId.HasValue)
                     {
+                        @if (Model.InvoiceRemainingAmount > 0)
+                        {
+                            <a asp-controller="Receptionist"
+                               asp-action="RecordPayment"
+                               asp-route-invoiceId="@Model.InvoiceId.Value"
+                               class="btn btn-warning fw-bold">
+                                Thanh toán nợ
+                            </a>
+                        }
                         <a asp-controller="Receptionist"
                            asp-action="InvoiceDetails"
                            asp-route-id="@Model.InvoiceId.Value"

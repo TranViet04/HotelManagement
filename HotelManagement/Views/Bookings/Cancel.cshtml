@@ -114,9 +114,27 @@
                     </div>
                 </div>
 
-                <div class="alert alert-warning mb-0">
+                <div class="alert alert-warning mb-3">
                     Sau khi hủy, đặt phòng sẽ chuyển sang trạng thái <strong>Đã hủy</strong>.
                 </div>
+
+                @if (Model.IsPaidBooking)
+                {
+                    <div class="alert alert-info mb-0">
+                        <strong>Chính sách hoàn tiền:</strong> @Model.PolicyDescription<br />
+                        <span>Số tiền hoàn dự kiến: <strong class="text-success">@Model.RefundAmount.ToString("N0") VND</strong></span>
+                        @if (Model.CancellationFee > 0)
+                        {
+                            <br /><span>Phí hủy: <strong class="text-danger">@Model.CancellationFee.ToString("N0") VND</strong></span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-secondary mb-0">
+                        Đơn chưa thanh toán — không phát sinh hoàn tiền.
+                    </div>
+                }
             </div>
         </div>
     </div>

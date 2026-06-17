@@ -36,11 +36,11 @@ namespace HotelManagement.Services.Admin
                 .Where(p => p.Status == PaymentStatuses.Paid);
 
             var filteredPayments = await paidPaymentsQuery
-                .Where(p => p.PaidAt >= from && p.PaidAt < toExclusive)
+                .Where(p => p.PaidAt.HasValue && p.PaidAt >= from && p.PaidAt < toExclusive)
                 .Select(p => new
                 {
                     p.Amount,
-                    p.PaidAt,
+                    PaidAt = p.PaidAt!.Value,
                     p.PaymentMethod
                 })
                 .ToListAsync();
@@ -74,10 +74,10 @@ namespace HotelManagement.Services.Admin
                 RangeRevenue = filteredPayments.Sum(p => p.Amount),
                 PaymentCount = filteredPayments.Count,
                 TodayRevenue = await paidPaymentsQuery
-                    .Where(p => p.PaidAt >= today && p.PaidAt < tomorrow)
+                    .Where(p => p.PaidAt.HasValue && p.PaidAt >= today && p.PaidAt < tomorrow)
                     .SumAsync(p => (decimal?)p.Amount) ?? 0,
                 MonthRevenue = await paidPaymentsQuery
-                    .Where(p => p.PaidAt >= firstDayOfMonth && p.PaidAt < firstDayNextMonth)
+                    .Where(p => p.PaidAt.HasValue && p.PaidAt >= firstDayOfMonth && p.PaidAt < firstDayNextMonth)
                     .SumAsync(p => (decimal?)p.Amount) ?? 0,
                 TotalRevenue = await paidPaymentsQuery
                     .SumAsync(p => (decimal?)p.Amount) ?? 0,

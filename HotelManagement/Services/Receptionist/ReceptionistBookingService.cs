@@ -80,7 +80,9 @@ namespace HotelManagement.Services.Receptionist
                     Children = b.Children,
                     Status = b.Status,
                     TotalAmount = b.TotalAmount,
-                    CreatedAt = b.CreatedAt
+                    CreatedAt = b.CreatedAt,
+                    InvoiceStatus = b.Invoice != null ? b.Invoice.Status : null,
+                    PaidAmount = b.Invoice != null ? b.Invoice.PaidAmount : 0
                 })
                 .ToListAsync();
 
@@ -101,7 +103,9 @@ namespace HotelManagement.Services.Receptionist
                     Children = b.Children,
                     Status = b.Status,
                     TotalAmount = b.TotalAmount,
-                    CreatedAt = b.CreatedAt
+                    CreatedAt = b.CreatedAt,
+                    InvoiceStatus = b.InvoiceStatus,
+                    PaidAmount = b.PaidAmount
                 })
                 .ToList();
 
@@ -187,6 +191,8 @@ namespace HotelManagement.Services.Receptionist
                 InvoiceId = booking.Invoice?.Id,
                 InvoiceCode = booking.Invoice?.InvoiceCode,
                 InvoiceStatus = booking.Invoice?.Status,
+                InvoicePaidAmount = booking.Invoice?.PaidAmount ?? 0,
+                InvoiceRemainingAmount = booking.Invoice?.RemainingAmount ?? 0,
                 CanCreateInvoice = createInvoiceAvailability.CanCreateInvoice,
                 CreateInvoiceBlockReason = createInvoiceAvailability.Reason,
                 Services = booking.BookingServices
@@ -295,7 +301,9 @@ namespace HotelManagement.Services.Receptionist
                     Children = b.Children,
                     Status = b.Status,
                     TotalAmount = b.TotalAmount,
-                    CreatedAt = b.CreatedAt
+                    CreatedAt = b.CreatedAt,
+                    InvoiceStatus = b.Invoice != null ? b.Invoice.Status : null,
+                    PaidAmount = b.Invoice != null ? b.Invoice.PaidAmount : 0
                 })
                 .ToListAsync();
 
@@ -428,7 +436,9 @@ namespace HotelManagement.Services.Receptionist
                     Children = b.Children,
                     Status = b.Status,
                     TotalAmount = b.TotalAmount,
-                    CreatedAt = b.CreatedAt
+                    CreatedAt = b.CreatedAt,
+                    InvoiceStatus = b.Invoice != null ? b.Invoice.Status : null,
+                    PaidAmount = b.Invoice != null ? b.Invoice.PaidAmount : 0
                 })
                 .ToListAsync();
 
@@ -449,7 +459,9 @@ namespace HotelManagement.Services.Receptionist
                     Children = b.Children,
                     Status = b.Status,
                     TotalAmount = b.TotalAmount,
-                    CreatedAt = b.CreatedAt
+                    CreatedAt = b.CreatedAt,
+                    InvoiceStatus = b.InvoiceStatus,
+                    PaidAmount = b.PaidAmount
                 })
                 .ToList();
         }
@@ -601,6 +613,7 @@ namespace HotelManagement.Services.Receptionist
         {
             var booking = await _context.Bookings
                 .Include(b => b.BookingServices)
+                .Include(b => b.Invoice)
                 .FirstOrDefaultAsync(b => b.Id == model.BookingId);
 
             if (booking == null)
@@ -656,6 +669,18 @@ namespace HotelManagement.Services.Receptionist
 
             booking.TotalServiceAmount += totalPrice;
             booking.TotalAmount = booking.TotalRoomAmount + booking.TotalServiceAmount;
+            
+            if (booking.Invoice != null)
+            {
+                booking.Invoice.TotalAmount = booking.TotalAmount;
+                booking.Invoice.RemainingAmount = booking.Invoice.TotalAmount - booking.Invoice.PaidAmount;
+                
+                if (booking.Invoice.RemainingAmount > 0 && booking.Invoice.Status == InvoiceStatuses.Paid)
+                {
+                    booking.Invoice.Status = InvoiceStatuses.PartiallyPaid;
+                }
+            }
+            
             booking.UpdatedAt = now;
 
             _context.ActivityLogs.Add(new ActivityLog
@@ -877,6 +902,147 @@ namespace HotelManagement.Services.Receptionist
                     && b.CheckInDate < checkOutDate
                     && b.CheckOutDate > checkInDate
                 );
+        }
+
+        public async Task<List<SelectListItem>> GetAvailableRoomOptionsAsync(DateTime checkInDate, DateTime checkOutDate)
+        {
+            var activeStatuses = new[]
+            {
+                BookingStatuses.Pending,
+                BookingStatuses.Confirmed,
+                BookingStatuses.CheckedIn
+            };
+
+            var overlappingRoomIds = await _context.Bookings
+                .AsNoTracking()
+                .Where(b => activeStatuses.Contains(b.Status)
+                            && b.CheckInDate < checkOutDate
+                            && b.CheckOutDate > checkInDate)
+                .Select(b => b.RoomId)
+                .ToListAsync();
+
+            var availableRooms = await _context.Rooms
+                .AsNoTracking()
+                .Include(r => r.RoomType)
+                .Where(r => r.Status == RoomStatuses.Available && r.RoomType != null && r.RoomType.Status == "Active" && !overlappingRoomIds.Contains(r.Id))
+                .OrderBy(r => r.RoomNumber)
+                .ToListAsync();
+
+            var options = availableRooms.Select(r => new SelectListItem
+            {
+                Value = r.Id.ToString(),
+                Text = $"{r.RoomNumber} - {r.RoomType!.Name} ({r.RoomType.Price:N0} VND/đêm)"
+            }).ToList();
+
+            options.Insert(0, new SelectListItem { Value = "", Text = "-- Chọn phòng --" });
+            return options;
+        }
+
+        public async Task<CreateWalkInBookingViewModel> PrepareCreateWalkInBookingAsync(CreateWalkInBookingViewModel? existingModel = null)
+        {
+            var model = existingModel ?? new CreateWalkInBookingViewModel();
+
+            model.RoomOptions = await GetAvailableRoomOptionsAsync(model.CheckInDate, model.CheckOutDate);
+
+            return model;
+        }
+
+        public async Task<ReceptionistBookingResult> CreateWalkInBookingAsync(
+            CreateWalkInBookingViewModel model,
+            long receptionistId)
+        {
+            var room = await _context.Rooms
+                .Include(r => r.RoomType)
+                .FirstOrDefaultAsync(r => r.Id == model.RoomId && r.Status == RoomStatuses.Available);
+
+            if (room == null || room.RoomType == null)
+            {
+                return ReceptionistBookingResult.Failure("Phòng không tồn tại hoặc không trống.");
+            }
+
+            if (room.RoomType.Status != "Active")
+            {
+                return ReceptionistBookingResult.Failure("Loại phòng không còn hoạt động.");
+            }
+
+            var hasOverlappingBooking = await HasOverlappingActiveBookingAsync(
+                room.Id,
+                model.CheckInDate,
+                model.CheckOutDate,
+                0
+            );
+
+            if (hasOverlappingBooking)
+            {
+                return ReceptionistBookingResult.Failure("Phòng đã có booking khác trùng thời gian.");
+            }
+
+            var customer = await _context.Users
+                .FirstOrDefaultAsync(c => c.Role == "Customer" && (c.PhoneNumber == model.CustomerPhoneNumber || c.IdentityNumber == model.CustomerIdentityNumber));
+
+            if (customer == null)
+            {
+                customer = new User
+                {
+                    FullName = model.CustomerName,
+                    PhoneNumber = model.CustomerPhoneNumber,
+                    Email = model.CustomerEmail ?? string.Empty,
+                    IdentityNumber = model.CustomerIdentityNumber,
+                    CreatedAt = DateTime.Now
+                };
+                _context.Users.Add(customer);
+            }
+            else
+            {
+                customer.FullName = model.CustomerName;
+                if (!string.IsNullOrWhiteSpace(model.CustomerEmail)) customer.Email = model.CustomerEmail;
+                if (!string.IsNullOrWhiteSpace(model.CustomerIdentityNumber)) customer.IdentityNumber = model.CustomerIdentityNumber;
+            }
+
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var random = new Random().Next(1000, 9999);
+            var bookingCode = $"BK{timestamp}{random}";
+
+            int nights = Math.Max(1, (model.CheckOutDate.Date - model.CheckInDate.Date).Days);
+            decimal totalRoomAmount = room.RoomType.Price * nights;
+
+            var booking = new Booking
+            {
+                Customer = customer,
+                RoomId = room.Id,
+                BookingCode = bookingCode,
+                CheckInDate = model.CheckInDate.Date,
+                CheckOutDate = model.CheckOutDate.Date,
+                Adults = model.Adults,
+                Children = model.Children,
+                Status = BookingStatuses.Confirmed, 
+                TotalRoomAmount = totalRoomAmount,
+                TotalServiceAmount = 0,
+                TotalAmount = totalRoomAmount,
+                CreatedAt = DateTime.Now,
+                ConfirmedAt = DateTime.Now
+            };
+
+            _context.Bookings.Add(booking);
+
+            var invoiceCode = $"INV{timestamp}{random}";
+            var invoice = new Invoice
+            {
+                Booking = booking,
+                InvoiceCode = invoiceCode,
+                TotalAmount = totalRoomAmount,
+                PaidAmount = 0,
+                RemainingAmount = totalRoomAmount,
+                Status = InvoiceStatuses.Unpaid,
+                IssuedAt = DateTime.Now,
+                IssuedByUserId = receptionistId
+            };
+            
+            _context.Invoices.Add(invoice);
+
+            await _context.SaveChangesAsync();
+
+            return ReceptionistBookingResult.Success(booking.Id, booking.BookingCode, "Đặt phòng thành công!");
         }
     }
 }

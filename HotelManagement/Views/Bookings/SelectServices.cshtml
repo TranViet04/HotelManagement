@@ -1,0 +1,177 @@
+@model HotelManagement.ViewModels.Customer.SelectServicesViewModel
+
+@{
+    ViewData["Title"] = "Chọn dịch vụ";
+}
+
+<section class="booking-create-header shadow-sm p-4 p-lg-5 mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <div class="text-uppercase text-primary fw-semibold mb-2">Bước 2 — Dịch vụ kèm theo</div>
+            <h1 class="fw-bold mb-3">Chọn dịch vụ cho đặt phòng</h1>
+            <p class="text-muted mb-0">
+                Phòng <strong>@Model.RoomNumber</strong> — @Model.RoomTypeName
+                (@Model.CheckInDate.ToString("dd/MM/yyyy") → @Model.CheckOutDate.ToString("dd/MM/yyyy"))
+            </p>
+        </div>
+    </div>
+</section>
+
+<form asp-controller="Bookings" asp-action="ConfirmBooking" method="post" id="selectServicesForm">
+    @Html.AntiForgeryToken()
+
+    <input asp-for="RoomId" type="hidden" />
+    <input asp-for="RoomNumber" type="hidden" />
+    <input asp-for="RoomTypeName" type="hidden" />
+    <input asp-for="PricePerNight" type="hidden" />
+    <input asp-for="Capacity" type="hidden" />
+    <input asp-for="CheckInDate" type="hidden" />
+    <input asp-for="CheckOutDate" type="hidden" />
+    <input asp-for="Adults" type="hidden" />
+    <input asp-for="Children" type="hidden" />
+    <input asp-for="SpecialRequest" type="hidden" />
+    <input asp-for="Nights" type="hidden" />
+    <input asp-for="TotalRoomAmount" type="hidden" />
+
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    @if (!Model.AvailableServices.Any())
+                    {
+                        <p class="text-muted mb-0">Hiện chưa có dịch vụ nào. Bạn có thể tiếp tục thanh toán tiền phòng.</p>
+                    }
+                    else
+                    {
+                        @for (var i = 0; i < Model.AvailableServices.Count; i++)
+                        {
+                            var service = Model.AvailableServices[i];
+                            <div class="border rounded p-3 mb-3 service-item">
+                                <input type="hidden" asp-for="AvailableServices[i].ServiceId" />
+                                <input type="hidden" asp-for="AvailableServices[i].Name" />
+                                <input type="hidden" asp-for="AvailableServices[i].Category" />
+                                <input type="hidden" asp-for="AvailableServices[i].Unit" />
+                                <input type="hidden" asp-for="AvailableServices[i].Price" class="service-price" data-index="@i" />
+
+                                <div class="d-flex flex-wrap align-items-center gap-3">
+                                    <div class="form-check mb-0">
+                                        <input asp-for="AvailableServices[i].IsSelected"
+                                               class="form-check-input service-checkbox"
+                                               data-index="@i"
+                                               type="checkbox" />
+                                        <label class="form-check-label fw-semibold" asp-for="AvailableServices[i].IsSelected">
+                                            @service.Name
+                                        </label>
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(service.Category))
+                                    {
+                                        <span class="badge bg-light text-dark">@service.Category</span>
+                                    }
+
+                                    <span class="text-muted ms-auto">
+                                        @service.Price.ToString("N0") VND / @(service.Unit ?? "lần")
+                                    </span>
+                                </div>
+
+                                <div class="mt-2 service-quantity-row" data-index="@i" style="display: none;">
+                                    <label asp-for="AvailableServices[i].Quantity" class="form-label">Số lượng</label>
+                                    <input asp-for="AvailableServices[i].Quantity"
+                                           type="number"
+                                           min="1"
+                                           max="20"
+                                           class="form-control service-quantity"
+                                           data-index="@i"
+                                           style="max-width: 120px;" />
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm sticky-top" style="top: 1rem;">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Tổng chi phí</h5>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tiền phòng (@Model.Nights đêm)</span>
+                        <strong id="roomAmount">@Model.TotalRoomAmount.ToString("N0")</strong>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Dịch vụ</span>
+                        <strong id="serviceAmount">0</strong>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-flex justify-content-between fs-5 mb-4">
+                        <span>Tổng cộng</span>
+                        <strong class="text-primary" id="totalAmount">@Model.TotalRoomAmount.ToString("N0")</strong>
+                    </div>
+
+                    <div class="alert alert-warning small">
+                        Mã QR thanh toán có hiệu lực <strong>30 phút</strong>. Đơn chưa thanh toán sẽ tự hủy sau <strong>3 giờ</strong>.
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        Tiếp tục thanh toán
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const roomAmount = @Model.TotalRoomAmount;
+
+            function formatMoney(value) {
+                return new Intl.NumberFormat('vi-VN').format(value) + ' VND';
+            }
+
+            function updateTotals() {
+                let serviceTotal = 0;
+
+                document.querySelectorAll('.service-checkbox').forEach(function (checkbox) {
+                    const index = checkbox.dataset.index;
+                    const quantityRow = document.querySelector('.service-quantity-row[data-index="' + index + '"]');
+                    const quantityInput = document.querySelector('.service-quantity[data-index="' + index + '"]');
+                    const priceInput = document.querySelector('.service-price[data-index="' + index + '"]');
+
+                    if (checkbox.checked) {
+                        quantityRow.style.display = 'block';
+                        const qty = parseInt(quantityInput.value, 10) || 1;
+                        const price = parseFloat(priceInput.value) || 0;
+                        serviceTotal += qty * price;
+                    } else {
+                        quantityRow.style.display = 'none';
+                    }
+                });
+
+                document.getElementById('serviceAmount').textContent = formatMoney(serviceTotal);
+                document.getElementById('totalAmount').textContent = formatMoney(roomAmount + serviceTotal);
+            }
+
+            document.querySelectorAll('.service-checkbox, .service-quantity').forEach(function (el) {
+                el.addEventListener('change', updateTotals);
+                el.addEventListener('input', updateTotals);
+            });
+
+            document.querySelectorAll('.service-checkbox:checked').forEach(function (checkbox) {
+                const index = checkbox.dataset.index;
+                document.querySelector('.service-quantity-row[data-index="' + index + '"]').style.display = 'block';
+            });
+
+            updateTotals();
+        })();
+    </script>
+}

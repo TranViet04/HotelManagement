@@ -33,5 +33,15 @@ namespace HotelManagement.ViewModels.Customer
         [Required(ErrorMessage = "Vui lòng nhập lý do hủy đặt phòng")]
         [MaxLength(500, ErrorMessage = "Lý do hủy tối đa 500 ký tự")]
         public string? CancelReason { get; set; }
+
+        public decimal RefundPercent { get; set; }
+
+        public decimal RefundAmount { get; set; }
+
+        public decimal CancellationFee { get; set; }
+
+        public string? PolicyDescription { get; set; }
+
+        public bool IsPaidBooking { get; set; }
     }
 }

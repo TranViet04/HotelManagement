@@ -138,7 +138,7 @@ namespace HotelManagement.ViewModels.Receptionist
 
         public string Status { get; set; } = string.Empty;
 
-        public DateTime PaidAt { get; set; }
+        public DateTime? PaidAt { get; set; }
 
         public string? CreatedByName { get; set; }
 

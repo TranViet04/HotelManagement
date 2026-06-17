@@ -86,6 +86,10 @@ namespace HotelManagement.ViewModels.Receptionist
 
         public string? InvoiceStatus { get; set; }
 
+        public decimal InvoicePaidAmount { get; set; }
+
+        public decimal InvoiceRemainingAmount { get; set; }
+
         public bool CanCreateInvoice { get; set; }
 
         public string? CreateInvoiceBlockReason { get; set; }

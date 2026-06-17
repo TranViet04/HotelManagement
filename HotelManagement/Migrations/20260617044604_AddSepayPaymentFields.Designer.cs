@@ -4,6 +4,7 @@ using HotelManagement.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HotelManagement.Migrations
 {
     [DbContext(typeof(HotelDbContext))]
-    partial class HotelDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260617044604_AddSepayPaymentFields")]
+    partial class AddSepayPaymentFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -196,97 +199,6 @@ namespace HotelManagement.Migrations
                     b.HasIndex("ServiceId");
 
                     b.ToTable("BookingServices");
-                });
-
-            modelBuilder.Entity("HotelManagement.Models.ChatConversation", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<long?>("AssignedReceptionistId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime?>("ClosedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<long>("CustomerId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime?>("LastMessageAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssignedReceptionistId");
-
-                    b.HasIndex("CustomerId");
-
-                    b.HasIndex("LastMessageAt");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("ChatConversations");
-                });
-
-            modelBuilder.Entity("HotelManagement.Models.ChatMessage", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Content")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<long>("ConversationId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("MessageType")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<string>("OriginalFileName")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<long>("SenderId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ConversationId");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("MessageType");
-
-                    b.HasIndex("SenderId");
-
-                    b.ToTable("ChatMessages");
                 });
 
             modelBuilder.Entity("HotelManagement.Models.Invoice", b =>
@@ -706,43 +618,6 @@ namespace HotelManagement.Migrations
                     b.Navigation("Service");
                 });
 
-            modelBuilder.Entity("HotelManagement.Models.ChatConversation", b =>
-                {
-                    b.HasOne("HotelManagement.Models.User", "AssignedReceptionist")
-                        .WithMany()
-                        .HasForeignKey("AssignedReceptionistId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("HotelManagement.Models.User", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("AssignedReceptionist");
-
-                    b.Navigation("Customer");
-                });
-
-            modelBuilder.Entity("HotelManagement.Models.ChatMessage", b =>
-                {
-                    b.HasOne("HotelManagement.Models.ChatConversation", "Conversation")
-                        .WithMany("Messages")
-                        .HasForeignKey("ConversationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("HotelManagement.Models.User", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Conversation");
-
-                    b.Navigation("Sender");
-                });
-
             modelBuilder.Entity("HotelManagement.Models.Invoice", b =>
                 {
                     b.HasOne("HotelManagement.Models.Booking", "Booking")
@@ -806,11 +681,6 @@ namespace HotelManagement.Migrations
                     b.Navigation("BookingServices");
 
                     b.Navigation("Invoice");
-                });
-
-            modelBuilder.Entity("HotelManagement.Models.ChatConversation", b =>
-                {
-                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("HotelManagement.Models.Invoice", b =>
