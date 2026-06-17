@@ -105,18 +105,17 @@
             </div>
 
             <div class="chat-input-area">
-                <form id="imageForm" enctype="multipart/form-data" class="chat-image-form">
+                <div class="chat-image-form">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="conversationId" value="@Model.SelectedConversationId.Value" />
                     <input id="imageInput"
-                           name="image"
                            type="file"
                            accept="image/jpeg,image/png,image/webp"
                            class="form-control form-control-sm" />
-                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                    <button id="uploadImageButton" type="button" class="btn btn-outline-primary btn-sm">
                         Gửi ảnh
                     </button>
-                </form>
+                </div>
 
                 <form id="messageForm" class="chat-text-form">
                     <input id="messageInput"
@@ -268,10 +267,8 @@
             });
         }
 
-        if (document.getElementById("imageForm")) {
-            document.getElementById("imageForm").addEventListener("submit", async function (event) {
-                event.preventDefault();
-
+        if (document.getElementById("uploadImageButton")) {
+            document.getElementById("uploadImageButton").addEventListener("click", async function () {
                 const input = document.getElementById("imageInput");
 
                 if (!input.files || input.files.length === 0) {
@@ -279,7 +276,14 @@
                     return;
                 }
 
-                const formData = new FormData(event.target);
+                const formData = new FormData();
+                formData.append(
+                    "__RequestVerificationToken",
+                    document.querySelector("input[name='__RequestVerificationToken']").value);
+                formData.append(
+                    "conversationId",
+                    document.querySelector("input[name='conversationId']").value);
+                formData.append("image", input.files[0]);
 
                 try {
                     errorBox.textContent = "";
