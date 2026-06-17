@@ -1,5 +1,7 @@
 @{
     var isAuthenticated = User.Identity != null && User.Identity.IsAuthenticated;
+    var isCustomer = User.IsInRole("Customer");
+    var usesSidebar = isAuthenticated && !isCustomer;
 
     var roleTitle = "Khách";
     var roleBadgeClass = "bg-secondary";
@@ -40,7 +42,7 @@
     <header class="app-topbar">
         <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
             <div class="container-fluid">
-                @if (isAuthenticated)
+                @if (usesSidebar)
                 {
                     <button class="btn btn-outline-secondary d-lg-none me-2"
                             type="button"
@@ -67,7 +69,7 @@
 
                 <div class="collapse navbar-collapse" id="topNavbar">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        @if (!isAuthenticated)
+                        @if (!isAuthenticated || isCustomer)
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Home" asp-action="Index">
@@ -92,6 +94,36 @@
                     <ul class="navbar-nav ms-auto">
                         @if (isAuthenticated)
                         {
+                            @if (isCustomer)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link customer-header-bookings"
+                                       asp-controller="Bookings"
+                                       asp-action="MyBookings">
+                                        Lịch sử đặt phòng
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="nav-link customer-profile-link"
+                                       asp-controller="Customer"
+                                       asp-action="Profile"
+                                       title="Xem thông tin cá nhân">
+                                        @User.Identity!.Name
+                                    </a>
+                                </li>
+
+                                <li class="nav-item">
+                                    <form asp-controller="Auth" asp-action="Logout" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-link nav-link text-dark">
+                                            Đăng xuất
+                                        </button>
+                                    </form>
+                                </li>
+                            }
+                            else
+                            {
                             <li class="nav-item d-flex align-items-center me-2">
                                 <span class="badge @roleBadgeClass">
                                     @roleTitle
@@ -112,6 +144,7 @@
                                     </button>
                                 </form>
                             </li>
+                            }
                         }
                         else
                         {
@@ -133,7 +166,7 @@
         </nav>
     </header>
 
-    @if (isAuthenticated)
+    @if (usesSidebar)
     {
         <div class="offcanvas offcanvas-start app-mobile-sidebar"
              tabindex="-1"
@@ -169,7 +202,7 @@
     }
 
     <div class="app-shell">
-        @if (isAuthenticated)
+        @if (usesSidebar)
         {
             <aside class="app-sidebar d-none d-lg-block">
                 <div class="sidebar-header">
@@ -192,7 +225,7 @@
             </aside>
         }
 
-        <main class="app-main @(isAuthenticated ? "" : "app-main-public")">
+        <main class="app-main @(usesSidebar ? "" : "app-main-public")">
             <div class="container-fluid py-4">
                 @if (TempData["SuccessMessage"] != null)
                 {
