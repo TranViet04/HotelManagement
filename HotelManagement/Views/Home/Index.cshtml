@@ -4,30 +4,34 @@
     ViewData["Title"] = "Trang chủ";
 }
 
-<section class="customer-hero p-4 p-lg-5 mb-4 shadow-sm">
+<section class="customer-hero boutique-hero p-4 p-lg-5 mb-4 shadow-sm">
     <div class="row align-items-center g-4">
         <div class="col-lg-7">
             <div class="text-uppercase text-primary fw-semibold mb-2">
-                HotelManagement
+                Boutique hotel
             </div>
 
-            <h1 class="display-5 fw-bold mb-3">
-                Đặt phòng khách sạn nhanh chóng, thuận tiện
+            <h1 class="display-4 fw-bold mb-3">
+                Nghỉ dưỡng tinh tế, đặt phòng nhanh chóng
             </h1>
 
             <p class="lead text-muted mb-4">
-                Tìm phòng phù hợp, xem thông tin chi tiết và đặt phòng trực tuyến chỉ trong vài bước.
+                Khám phá phòng nghỉ phù hợp, xem hình ảnh chi tiết và đặt phòng trực tuyến chỉ trong vài bước.
             </p>
 
             <div class="d-flex flex-wrap gap-2">
                 <a asp-controller="Rooms" asp-action="Index" class="btn btn-primary btn-lg">
-                    Xem danh sách phòng
+                    Xem phòng trống
+                </a>
+
+                <a href="#services" class="btn btn-outline-dark btn-lg">
+                    Khám phá dịch vụ
                 </a>
             </div>
         </div>
 
         <div class="col-lg-5">
-            <div class="booking-search-card bg-light p-4">
+            <div class="booking-search-card boutique-search-card bg-light p-4">
                 <h5 class="fw-bold mb-3">Tìm phòng nhanh</h5>
 
                 <form asp-controller="Rooms" asp-action="Index" method="get">
@@ -78,12 +82,13 @@
 
 @await Component.InvokeAsync("RoomTypeCarousel")
 
-<section class="mb-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<section class="mb-5">
+    <div class="boutique-section-heading">
         <div>
+            <div class="text-uppercase text-primary fw-semibold mb-2">Lưu trú</div>
             <h2 class="h3 fw-bold mb-1">Loại phòng nổi bật</h2>
             <p class="text-muted mb-0">
-                Một số lựa chọn phù hợp cho khách lưu trú.
+                Những lựa chọn được chuẩn bị cho kỳ nghỉ, chuyến công tác hoặc dịp đặc biệt của bạn.
             </p>
         </div>
 
@@ -104,7 +109,7 @@
             @foreach (var room in Model.FeaturedRooms)
             {
                 <div class="col-md-6 col-xl-3">
-                    <div class="card room-card h-100 border-0 shadow-sm">
+                    <div class="card room-card boutique-room-card h-100 border-0 shadow-sm">
                         @if (!string.IsNullOrWhiteSpace(room.ThumbnailUrl))
                         {
                             <img src="@room.ThumbnailUrl"
@@ -128,22 +133,14 @@
                                 }
                                 else
                                 {
-                                    <span>Chưa có mô tả.</span>
+                                    <span>Không gian lưu trú tiện nghi, phù hợp cho nhiều nhu cầu.</span>
                                 }
                             </p>
 
-                            <div class="mb-2 small">
-                                <div>
-                                    <strong>Sức chứa:</strong> @room.Capacity khách
-                                </div>
-
-                                <div>
-                                    <strong>Giường:</strong> @(room.BedType ?? "Đang cập nhật")
-                                </div>
-
-                                <div>
-                                    <strong>Phòng trống:</strong> @room.AvailableRoomCount
-                                </div>
+                            <div class="boutique-room-meta mb-3">
+                                <span>@room.Capacity khách</span>
+                                <span>@(room.BedType ?? "Đang cập nhật")</span>
+                                <span>@room.AvailableRoomCount phòng trống</span>
                             </div>
 
                             <div class="fw-bold text-primary mb-3">
@@ -164,37 +161,106 @@
     }
 </section>
 
-<section class="row g-4 mb-4">
-    <div class="col-md-4">
-        <div class="card card-dashboard h-100">
-            <div class="card-body">
-                <h5 class="fw-bold">Đặt phòng dễ dàng</h5>
-                <p class="text-muted mb-0">
-                    Khách hàng có thể tìm phòng và gửi yêu cầu đặt phòng trực tuyến.
-                </p>
-            </div>
+<section id="services" class="boutique-services mb-5">
+    <div class="boutique-section-heading">
+        <div>
+            <div class="text-uppercase text-primary fw-semibold mb-2">Dịch vụ</div>
+            <h2 class="h3 fw-bold mb-1">Trải nghiệm nổi bật</h2>
+            <p class="text-muted mb-0">
+                Các tiện ích giúp kỳ lưu trú trở nên thoải mái, riêng tư và trọn vẹn hơn.
+            </p>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card card-dashboard h-100">
-            <div class="card-body">
-                <h5 class="fw-bold">Thông tin rõ ràng</h5>
-                <p class="text-muted mb-0">
-                    Hiển thị giá, sức chứa, loại giường và mô tả phòng trước khi đặt.
-                </p>
+    <div class="row g-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="boutique-service-card">
+                <div class="service-number">01</div>
+                <h5>Nhà hàng</h5>
+                <p>Thực đơn linh hoạt cho bữa sáng, bữa tối và những buổi gặp gỡ thân mật.</p>
             </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="boutique-service-card">
+                <div class="service-number">02</div>
+                <h5>Spa thư giãn</h5>
+                <p>Không gian chăm sóc sức khỏe nhẹ nhàng sau hành trình dài.</p>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="boutique-service-card">
+                <div class="service-number">03</div>
+                <h5>Giặt ủi</h5>
+                <p>Dịch vụ tiện lợi cho khách lưu trú dài ngày hoặc đi công tác.</p>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="boutique-service-card">
+                <div class="service-number">04</div>
+                <h5>Đưa đón</h5>
+                <p>Hỗ trợ di chuyển nhanh gọn từ sân bay, nhà ga hoặc các điểm trung tâm.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="about" class="boutique-about mb-5">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-5">
+            <div class="boutique-about-image"></div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="text-uppercase text-primary fw-semibold mb-2">Giới thiệu</div>
+            <h2 class="fw-bold mb-3">Một điểm dừng chân ấm áp giữa nhịp sống thành phố</h2>
+            <p class="text-muted">
+                HotelManagement được định hướng như một khách sạn boutique nhỏ gọn: hình ảnh rõ ràng,
+                thông tin phòng minh bạch, thao tác đặt phòng nhanh và đội ngũ lễ tân luôn sẵn sàng hỗ trợ qua chat realtime.
+            </p>
+
+            <div class="boutique-stats">
+                <div>
+                    <strong>24/7</strong>
+                    <span>Hỗ trợ lễ tân</span>
+                </div>
+                <div>
+                    <strong>Online</strong>
+                    <span>Đặt phòng nhanh</span>
+                </div>
+                <div>
+                    <strong>Rõ ràng</strong>
+                    <span>Giá và phòng trống</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="boutique-gallery mb-5">
+    <div class="boutique-section-heading">
+        <div>
+            <div class="text-uppercase text-primary fw-semibold mb-2">Gallery</div>
+            <h2 class="h3 fw-bold mb-1">Không gian khách sạn</h2>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card card-dashboard h-100">
-            <div class="card-body">
-                <h5 class="fw-bold">Theo dõi lịch sử</h5>
-                <p class="text-muted mb-0">
-                    Sau khi đăng nhập, khách hàng có thể xem lại các đặt phòng của mình.
-                </p>
-            </div>
-        </div>
+    <div class="boutique-gallery-grid">
+        <div class="gallery-tile gallery-large"></div>
+        <div class="gallery-tile gallery-restaurant"></div>
+        <div class="gallery-tile gallery-room"></div>
     </div>
+</section>
+
+<section class="boutique-cta mb-4">
+    <div>
+        <div class="text-uppercase fw-semibold mb-2">Sẵn sàng cho kỳ lưu trú tiếp theo?</div>
+        <h2 class="fw-bold mb-0">Kiểm tra phòng trống và đặt phòng ngay hôm nay.</h2>
+    </div>
+
+    <a asp-controller="Rooms" asp-action="Index" class="btn btn-light btn-lg">
+        Xem phòng
+    </a>
 </section>
