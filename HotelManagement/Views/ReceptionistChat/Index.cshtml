@@ -30,7 +30,7 @@
 </section>
 
 <div class="chat-admin-layout">
-    <aside class="chat-conversation-list">
+    <aside id="chatConversationList" class="chat-conversation-list">
         @if (Model.Conversations == null || !Model.Conversations.Any())
         {
             <div class="alert alert-info mb-0">
@@ -143,6 +143,7 @@
         const currentUserId = @currentUserId;
         const messagesBox = document.getElementById("chatMessages");
         const errorBox = document.getElementById("chatError");
+        const conversationList = document.getElementById("chatConversationList");
 
         function scrollToBottom() {
             if (messagesBox) {
@@ -211,6 +212,87 @@
             scrollToBottom();
         }
 
+        function renderConversationList(conversations) {
+            if (!conversationList) {
+                return;
+            }
+
+            conversationList.innerHTML = "";
+
+            if (!conversations || conversations.length === 0) {
+                const empty = document.createElement("div");
+                empty.className = "alert alert-info mb-0";
+                empty.textContent = "Chưa có khách hàng nào nhắn tin.";
+                conversationList.appendChild(empty);
+                return;
+            }
+
+            for (const item of conversations) {
+                const link = document.createElement("a");
+                link.href = `/Receptionist/Chats?conversationId=${item.conversationId}`;
+                link.className = "chat-conversation-item";
+
+                if (Number(item.conversationId) === Number(selectedConversationId)) {
+                    link.classList.add("active");
+                }
+
+                const header = document.createElement("div");
+                header.className = "d-flex justify-content-between gap-2";
+
+                const name = document.createElement("strong");
+                name.textContent = item.customerName || "";
+                header.appendChild(name);
+
+                const unreadCount = Number(item.conversationId) === Number(selectedConversationId)
+                    ? 0
+                    : Number(item.unreadCount || 0);
+
+                if (unreadCount > 0) {
+                    const badge = document.createElement("span");
+                    badge.className = "badge bg-danger";
+                    badge.textContent = unreadCount;
+                    header.appendChild(badge);
+                }
+
+                const contact = document.createElement("div");
+                contact.className = "text-muted small";
+                contact.textContent = item.customerPhoneNumber || item.customerEmail || "Chưa có liên hệ";
+
+                const preview = document.createElement("div");
+                preview.className = "chat-preview";
+                preview.textContent = item.lastMessagePreview || "";
+
+                link.appendChild(header);
+                link.appendChild(contact);
+                link.appendChild(preview);
+                conversationList.appendChild(link);
+            }
+        }
+
+        async function refreshConversationList(conversationId) {
+            try {
+                const response = await fetch("/Receptionist/Chats/Conversations", {
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const conversations = await response.json();
+                renderConversationList(conversations);
+
+                if (Number(conversationId) !== Number(selectedConversationId)) {
+                    const title = document.title.replace(" *", "");
+                    document.title = title + " *";
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/chatHub")
             .withAutomaticReconnect()
@@ -221,10 +303,7 @@
         });
 
         connection.on("ConversationUpdated", function (conversationId) {
-            if (Number(conversationId) !== Number(selectedConversationId)) {
-                const title = document.title.replace(" *", "");
-                document.title = title + " *";
-            }
+            refreshConversationList(conversationId);
         });
 
         async function startChat() {

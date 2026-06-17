@@ -26,6 +26,15 @@ namespace HotelManagement.Controllers
             return View(model);
         }
 
+        [HttpGet("Conversations")]
+        public async Task<IActionResult> Conversations()
+        {
+            var receptionistId = GetCurrentUserId();
+            var conversations = await _chatService.GetReceptionistConversationsAsync(receptionistId);
+
+            return Json(conversations);
+        }
+
         private long GetCurrentUserId()
         {
             var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
