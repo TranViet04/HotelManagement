@@ -8,7 +8,7 @@
     <div class="row align-items-center g-4">
         <div class="col-lg-7">
             <div class="text-uppercase text-primary fw-semibold mb-2">
-                Boutique hotel
+                HotelManagement
             </div>
 
             <h1 class="display-4 fw-bold mb-3">
@@ -21,7 +21,7 @@
 
             <div class="d-flex flex-wrap gap-2">
                 <a asp-controller="Rooms" asp-action="Index" class="btn btn-primary btn-lg">
-                    Xem phòng trống
+                    Xem loại phòng
                 </a>
 
                 <a href="#services" class="btn btn-outline-dark btn-lg">
@@ -31,50 +31,37 @@
         </div>
 
         <div class="col-lg-5">
-            <div class="booking-search-card boutique-search-card bg-light p-4">
-                <h5 class="fw-bold mb-3">Tìm phòng nhanh</h5>
+            <div class="booking-search-card boutique-search-card hero-booking-card bg-light p-4">
+                <div class="text-uppercase text-primary fw-semibold mb-2">Đặt phòng nhanh</div>
+                <h5 class="fw-bold mb-3">Chọn loại phòng phù hợp và gửi yêu cầu đặt phòng</h5>
+                <p class="text-muted mb-4">
+                    Xem thông tin từng loại phòng, chọn phòng cụ thể và gửi đặt phòng trực tuyến. Lễ tân sẽ hỗ trợ xác nhận trong thời gian ngắn.
+                </p>
 
-                <form asp-controller="Rooms" asp-action="Index" method="get">
-                    <div class="mb-3">
-                        <label class="form-label">Ngày nhận phòng</label>
-                        <input type="date"
-                               name="CheckInDate"
-                               class="form-control"
-                               value="@Model.CheckInDate.ToString("yyyy-MM-dd")" />
+                <div class="hero-booking-steps mb-4">
+                    <div>
+                        <strong>01</strong>
+                        <span>Xem loại phòng</span>
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Ngày trả phòng</label>
-                        <input type="date"
-                               name="CheckOutDate"
-                               class="form-control"
-                               value="@Model.CheckOutDate.ToString("yyyy-MM-dd")" />
+                    <div>
+                        <strong>02</strong>
+                        <span>Chọn phòng cụ thể</span>
                     </div>
-
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label">Người lớn</label>
-                            <input type="number"
-                                   name="Adults"
-                                   class="form-control"
-                                   value="@Model.Adults"
-                                   min="1" />
-                        </div>
-
-                        <div class="col-6 mb-3">
-                            <label class="form-label">Trẻ em</label>
-                            <input type="number"
-                                   name="Children"
-                                   class="form-control"
-                                   value="@Model.Children"
-                                   min="0" />
-                        </div>
+                    <div>
+                        <strong>03</strong>
+                        <span>Gửi yêu cầu đặt phòng</span>
                     </div>
+                </div>
 
-                    <button type="submit" class="btn btn-primary w-100">
-                        Kiểm tra phòng trống
-                    </button>
-                </form>
+                <div class="d-grid gap-2">
+                    <a asp-controller="Rooms" asp-action="Index" class="btn btn-primary">
+                        Xem danh sách phòng
+                    </a>
+
+                    <a asp-controller="CustomerChat" asp-action="Index" class="btn btn-outline-dark">
+                        Nhắn lễ tân
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -108,20 +95,16 @@
         <div class="row g-4">
             @foreach (var room in Model.FeaturedRooms)
             {
+                var thumbnailUrl = string.IsNullOrWhiteSpace(room.ThumbnailUrl)
+                    ? "/images/rooms/default-room.jpg"
+                    : room.ThumbnailUrl;
+
                 <div class="col-md-6 col-xl-3">
                     <div class="card room-card boutique-room-card h-100 border-0 shadow-sm">
-                        @if (!string.IsNullOrWhiteSpace(room.ThumbnailUrl))
-                        {
-                            <img src="@room.ThumbnailUrl"
-                                 class="card-img-top room-card-img"
-                                 alt="@room.Name" />
-                        }
-                        else
-                        {
-                            <div class="room-card-img room-card-placeholder d-flex align-items-center justify-content-center">
-                                <span>@room.Name</span>
-                            </div>
-                        }
+                        <img src="@thumbnailUrl"
+                             class="card-img-top room-card-img"
+                             alt="@room.Name"
+                             onerror="this.onerror=null;this.src='/images/rooms/default-room.jpg';" />
 
                         <div class="card-body d-flex flex-column">
                             <h5 class="card-title fw-bold">@room.Name</h5>
@@ -257,10 +240,10 @@
 <section class="boutique-cta mb-4">
     <div>
         <div class="text-uppercase fw-semibold mb-2">Sẵn sàng cho kỳ lưu trú tiếp theo?</div>
-        <h2 class="fw-bold mb-0">Kiểm tra phòng trống và đặt phòng ngay hôm nay.</h2>
+        <h2 class="fw-bold mb-0">Khám phá các loại phòng và đặt phòng chỉ trong vài bước.</h2>
     </div>
 
     <a asp-controller="Rooms" asp-action="Index" class="btn btn-light btn-lg">
-        Xem phòng
+        Xem loại phòng
     </a>
 </section>

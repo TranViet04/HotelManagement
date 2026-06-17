@@ -46,6 +46,25 @@ body {
   z-index: 1030;
 }
 
+.app-topbar .navbar-brand {
+  color: #111827;
+}
+
+.app-topbar .nav-link:hover {
+  color: #b7791f;
+}
+
+.app-topbar .btn-primary {
+  border-color: #111827;
+  background-color: #111827;
+}
+
+.app-topbar .btn-primary:hover,
+.app-topbar .btn-primary:focus {
+  border-color: #b7791f;
+  background-color: #b7791f;
+}
+
 .app-shell {
   min-height: calc(100vh - 57px);
   display: flex;
@@ -160,7 +179,7 @@ body {
 }
 
 .public-footer-grid a:hover {
-  color: #0d6efd;
+  color: #b7791f;
 }
 
 .public-footer-socials {
@@ -204,23 +223,24 @@ body {
 }
 
 .customer-header-bookings:hover {
-  color: #0d6efd;
+  color: #b7791f;
 }
 
 .customer-profile-link {
-  border: 1px solid #bfdbfe;
+  border: 1px solid #f3d27a;
   border-radius: 999px;
-  color: #0d6efd !important;
+  color: #111827 !important;
   font-weight: 700;
   margin-left: 6px;
   padding-left: 14px !important;
   padding-right: 14px !important;
+  background-color: #fffaf0;
 }
 
 .customer-profile-link:hover {
-  background-color: #eff6ff;
-  border-color: #0d6efd;
-  color: #0b5ed7 !important;
+  background-color: #f3d27a;
+  border-color: #b7791f;
+  color: #111827 !important;
   text-decoration: underline;
 }
 
@@ -274,6 +294,36 @@ body {
     url("https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1400&q=80") center / cover;
 }
 
+.app-main-public .text-primary {
+  color: #b7791f !important;
+}
+
+.app-main-public .btn-primary {
+  border-color: #111827;
+  background-color: #111827;
+  color: #ffffff;
+}
+
+.app-main-public .btn-primary:hover,
+.app-main-public .btn-primary:focus {
+  border-color: #b7791f;
+  background-color: #b7791f;
+  color: #ffffff;
+}
+
+.app-main-public .btn-outline-primary,
+.app-main-public .btn-outline-secondary {
+  border-color: #111827;
+  color: #111827;
+}
+
+.app-main-public .btn-outline-primary:hover,
+.app-main-public .btn-outline-secondary:hover {
+  border-color: #111827;
+  background-color: #111827;
+  color: #ffffff;
+}
+
 .booking-search-card {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -302,7 +352,7 @@ body {
   align-items: center;
   overflow: hidden;
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.9) 48%, rgba(255, 255, 255, 0.46) 100%),
+    linear-gradient(90deg, rgba(255, 250, 240, 0.94) 0%, rgba(255, 250, 240, 0.82) 44%, rgba(15, 23, 42, 0.26) 100%),
     url("https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1800&q=80") center / cover;
 }
 
@@ -317,6 +367,36 @@ body {
 
 .boutique-search-card {
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+}
+
+.hero-booking-card {
+  background-color: rgba(255, 255, 255, 0.96) !important;
+}
+
+.hero-booking-steps {
+  display: grid;
+  gap: 10px;
+}
+
+.hero-booking-steps div {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #fffaf0;
+}
+
+.hero-booking-steps strong {
+  color: #b7791f;
+  font-size: 14px;
+}
+
+.hero-booking-steps span {
+  color: #334155;
+  font-weight: 700;
 }
 
 .boutique-section-heading {
@@ -1126,16 +1206,16 @@ body {
   gap: 8px;
   padding: 11px 16px;
   border-radius: 999px;
-  background-color: #0d6efd;
+  background-color: #111827;
   color: #ffffff;
   text-decoration: none;
   font-weight: 600;
-  box-shadow: 0 10px 30px rgba(13, 110, 253, 0.35);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.28);
 }
 
 .customer-chat-floating-button:hover {
   color: #ffffff;
-  background-color: #0b5ed7;
+  background-color: #b7791f;
 }
 
 .chat-page-header {
