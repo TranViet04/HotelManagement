@@ -1,8 +1,10 @@
 using HotelManagement.Constants;
+using HotelManagement.Data;
 using HotelManagement.Services.Admin;
 using HotelManagement.ViewModels.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace HotelManagement.Controllers
@@ -20,6 +22,7 @@ namespace HotelManagement.Controllers
         private readonly InvoiceTrackingService _invoiceTrackingService;
         private readonly RevenueReportService _revenueReportService;
         private readonly ActivityLogService _activityLogService;
+        private readonly HotelDbContext _context;
         private readonly IWebHostEnvironment _environment;
 
         public AdminController(
@@ -33,6 +36,7 @@ namespace HotelManagement.Controllers
             InvoiceTrackingService invoiceTrackingService,
             RevenueReportService revenueReportService,
             ActivityLogService activityLogService,
+            HotelDbContext context,
             IWebHostEnvironment environment)
         {
             _dashboardService = dashboardService;
@@ -45,6 +49,7 @@ namespace HotelManagement.Controllers
             _invoiceTrackingService = invoiceTrackingService;
             _revenueReportService = revenueReportService;
             _activityLogService = activityLogService;
+            _context = context;
             _environment = environment;
         }
 
@@ -56,7 +61,9 @@ namespace HotelManagement.Controllers
 
         public async Task<IActionResult> RoomTypes()
         {
-            var model = await _roomTypeService.GetAllAsync();
+            var model = (await _roomTypeService.GetAllAsync())
+                .Where(rt => rt.Status != "Inactive")
+                .ToList();
             return View(model);
         }
 
@@ -68,7 +75,7 @@ namespace HotelManagement.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateRoomType(RoomTypeFormViewModel model)
+        public async Task<IActionResult> CreateRoomType(RoomTypeFormViewModel model, List<IFormFile>? images)
         {
             if (!ModelState.IsValid)
             {
@@ -84,6 +91,13 @@ namespace HotelManagement.Controllers
             }
 
             var roomTypeId = await _roomTypeService.CreateAsync(model);
+            var imageUrls = await SaveRoomTypeImagesAsync(roomTypeId, images);
+
+            if (imageUrls.Any())
+            {
+                await _roomTypeService.SetThumbnailUrlAsync(roomTypeId, imageUrls.First());
+            }
+
             await AddActivityLogAsync(
                 "CreateRoomType",
                 "RoomType",
@@ -105,13 +119,16 @@ namespace HotelManagement.Controllers
                 return RedirectToAction(nameof(RoomTypes));
             }
 
+            model.ExistingImageUrls = GetRoomTypeImageUrls(id);
             return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditRoomType(RoomTypeFormViewModel model)
+        public async Task<IActionResult> EditRoomType(RoomTypeFormViewModel model, List<IFormFile>? images)
         {
+            model.ExistingImageUrls = GetRoomTypeImageUrls(model.Id);
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -131,6 +148,13 @@ namespace HotelManagement.Controllers
             {
                 TempData["ErrorMessage"] = "Không tìm thấy loại phòng";
                 return RedirectToAction(nameof(RoomTypes));
+            }
+
+            var imageUrls = await SaveRoomTypeImagesAsync(model.Id, images);
+
+            if (imageUrls.Any())
+            {
+                await _roomTypeService.SetThumbnailUrlAsync(model.Id, imageUrls.First());
             }
 
             await AddActivityLogAsync(
@@ -165,9 +189,46 @@ namespace HotelManagement.Controllers
             return RedirectToAction(nameof(RoomTypes));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteRoomType(long id)
+        {
+            var roomType = await _context.RoomTypes.FindAsync(id);
+
+            if (roomType == null)
+            {
+                TempData["Error"] = "Không tìm thấy loại phòng.";
+                return RedirectToAction(nameof(RoomTypes));
+            }
+
+            var hasActiveRooms = await _context.Rooms
+                .AnyAsync(r => r.RoomTypeId == id && r.Status != RoomStatuses.Inactive);
+
+            if (hasActiveRooms)
+            {
+                TempData["Error"] = "Không thể xóa loại phòng vì vẫn còn phòng đang sử dụng loại này.";
+                return RedirectToAction(nameof(RoomTypes));
+            }
+
+            roomType.Status = "Inactive";
+            roomType.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+            await AddActivityLogAsync(
+                "DeleteRoomType",
+                "RoomType",
+                id,
+                $"Xóa mềm loại phòng {roomType.Name}");
+
+            TempData["Success"] = "Đã xóa loại phòng.";
+            return RedirectToAction(nameof(RoomTypes));
+        }
+
         public async Task<IActionResult> Rooms()
         {
-            var model = await _roomService.GetAllAsync();
+            var model = (await _roomService.GetAllAsync())
+                .Where(r => r.Status != RoomStatuses.Inactive)
+                .ToList();
             return View(model);
         }
 
@@ -309,9 +370,49 @@ namespace HotelManagement.Controllers
             return RedirectToAction(nameof(EditRoom), new { id = roomId });
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteRoom(long id)
+        {
+            var room = await _context.Rooms.FindAsync(id);
+
+            if (room == null)
+            {
+                TempData["Error"] = "Không tìm thấy phòng.";
+                return RedirectToAction(nameof(Rooms));
+            }
+
+            var hasActiveBooking = await _context.Bookings.AnyAsync(b =>
+                b.RoomId == id &&
+                (b.Status == BookingStatuses.Pending ||
+                 b.Status == BookingStatuses.Confirmed ||
+                 b.Status == BookingStatuses.CheckedIn));
+
+            if (hasActiveBooking)
+            {
+                TempData["Error"] = "Không thể xóa phòng vì phòng đang có đặt phòng chưa hoàn tất.";
+                return RedirectToAction(nameof(Rooms));
+            }
+
+            room.Status = RoomStatuses.Inactive;
+            room.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+            await AddActivityLogAsync(
+                "DeleteRoom",
+                "Room",
+                id,
+                $"Xóa mềm phòng {room.RoomNumber}");
+
+            TempData["Success"] = "Đã xóa phòng.";
+            return RedirectToAction(nameof(Rooms));
+        }
+
         public async Task<IActionResult> Services()
         {
-            var model = await _serviceManagementService.GetAllAsync();
+            var model = (await _serviceManagementService.GetAllAsync())
+                .Where(s => s.Status != "Inactive")
+                .ToList();
             return View(model);
         }
 
@@ -417,6 +518,32 @@ namespace HotelManagement.Controllers
                 $"Ngưng sử dụng dịch vụ #{id}");
 
             TempData["SuccessMessage"] = "Đã ngưng sử dụng dịch vụ";
+            return RedirectToAction(nameof(Services));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteService(long id)
+        {
+            var service = await _context.Services.FindAsync(id);
+
+            if (service == null)
+            {
+                TempData["Error"] = "Không tìm thấy dịch vụ.";
+                return RedirectToAction(nameof(Services));
+            }
+
+            service.Status = "Inactive";
+            service.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+            await AddActivityLogAsync(
+                "DeleteService",
+                "Service",
+                id,
+                $"Xóa mềm dịch vụ {service.Name}");
+
+            TempData["Success"] = "Đã xóa dịch vụ.";
             return RedirectToAction(nameof(Services));
         }
 
@@ -736,6 +863,48 @@ namespace HotelManagement.Controllers
             return View(model);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteBooking(long id)
+        {
+            var booking = await _context.Bookings
+                .Include(b => b.Invoice)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (booking == null)
+            {
+                TempData["Error"] = "Không tìm thấy đặt phòng.";
+                return RedirectToAction(nameof(Bookings));
+            }
+
+            if (booking.Status == BookingStatuses.CheckedIn || booking.Status == BookingStatuses.CheckedOut)
+            {
+                TempData["Error"] = "Không thể xóa đặt phòng đã check-in hoặc check-out.";
+                return RedirectToAction(nameof(Bookings));
+            }
+
+            if (booking.Invoice != null && booking.Invoice.Status == InvoiceStatuses.Paid)
+            {
+                TempData["Error"] = "Không thể xóa đặt phòng đã có hóa đơn thanh toán.";
+                return RedirectToAction(nameof(Bookings));
+            }
+
+            booking.Status = BookingStatuses.Cancelled;
+            booking.CancelledAt = DateTime.Now;
+            booking.CancelReason = "Admin hủy đặt phòng.";
+            booking.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+            await AddActivityLogAsync(
+                "DeleteBooking",
+                "Booking",
+                id,
+                $"Hủy đặt phòng {booking.BookingCode}");
+
+            TempData["Success"] = "Đã hủy đặt phòng.";
+            return RedirectToAction(nameof(Bookings));
+        }
+
         public async Task<IActionResult> Invoices(
             string? keyword,
             string? status,
@@ -807,6 +976,75 @@ namespace HotelManagement.Controllers
             }
 
             await _activityLogService.AddAsync(userId, action, entityName, entityId, description);
+        }
+
+        private async Task<List<string>> SaveRoomTypeImagesAsync(long roomTypeId, List<IFormFile>? images)
+        {
+            var imageUrls = new List<string>();
+
+            if (images == null || !images.Any())
+            {
+                return imageUrls;
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            var uploadFolder = Path.Combine(_environment.WebRootPath, "images", "room-types", roomTypeId.ToString());
+
+            if (!Directory.Exists(uploadFolder))
+            {
+                Directory.CreateDirectory(uploadFolder);
+            }
+
+            foreach (var image in images)
+            {
+                if (image.Length <= 0)
+                {
+                    continue;
+                }
+
+                var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
+
+                if (!allowedExtensions.Contains(extension))
+                {
+                    continue;
+                }
+
+                if (image.Length > 5 * 1024 * 1024)
+                {
+                    continue;
+                }
+
+                var fileName = $"{Guid.NewGuid()}{extension}";
+                var filePath = Path.Combine(uploadFolder, fileName);
+
+                await using var stream = new FileStream(filePath, FileMode.Create);
+                await image.CopyToAsync(stream);
+
+                imageUrls.Add($"/images/room-types/{roomTypeId}/{fileName}");
+            }
+
+            return imageUrls;
+        }
+
+        private List<string> GetRoomTypeImageUrls(long roomTypeId)
+        {
+            var uploadFolder = Path.Combine(_environment.WebRootPath, "images", "room-types", roomTypeId.ToString());
+
+            if (!Directory.Exists(uploadFolder))
+            {
+                return new List<string>();
+            }
+
+            return Directory
+                .GetFiles(uploadFolder)
+                .Where(file =>
+                {
+                    var extension = Path.GetExtension(file).ToLowerInvariant();
+                    return extension is ".jpg" or ".jpeg" or ".png" or ".webp";
+                })
+                .OrderBy(file => file)
+                .Select(file => $"/images/room-types/{roomTypeId}/{Path.GetFileName(file)}")
+                .ToList();
         }
 
         private async Task<List<string>> SaveRoomImagesAsync(List<IFormFile>? images)
