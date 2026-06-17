@@ -8,10 +8,12 @@ namespace HotelManagement.Services.Customer
     public class PublicRoomService
     {
         private readonly HotelDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public PublicRoomService(HotelDbContext context)
+        public PublicRoomService(HotelDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
         }
 
         public async Task<List<RoomCardViewModel>> GetActiveRoomTypesAsync()
@@ -34,7 +36,7 @@ namespace HotelManagement.Services.Customer
                 .ToListAsync();
         }
 
-        public async Task<List<AvailableRoomViewModel>> SearchAvailableRoomsAsync(RoomSearchViewModel model)
+        public async Task<List<AvailableRoomTypeViewModel>> SearchAvailableRoomTypesAsync(RoomSearchViewModel model)
         {
             var checkInDate = model.CheckInDate.Date;
             var checkOutDate = model.CheckOutDate.Date;
@@ -48,37 +50,34 @@ namespace HotelManagement.Services.Customer
                 BookingStatuses.CheckedIn
             };
 
-            var availableRooms = await _context.Rooms
+            var availableRoomTypes = await _context.RoomTypes
                 .AsNoTracking()
-                .Include(r => r.RoomType)
-                .Where(r => r.Status == RoomStatuses.Available)
-                .Where(r => r.RoomType != null && r.RoomType.Status == "Active")
-                .Where(r => r.RoomType != null && r.RoomType.Capacity >= totalGuests)
-                .Where(r => !r.Bookings.Any(b =>
-                    unavailableBookingStatuses.Contains(b.Status)
-                    && b.CheckInDate < checkOutDate
-                    && b.CheckOutDate > checkInDate
-                ))
-                .OrderBy(r => r.RoomType!.Price)
-                .ThenBy(r => r.RoomNumber)
-                .Select(r => new AvailableRoomViewModel
+                .Where(rt => rt.Status == "Active")
+                .Where(rt => rt.Capacity >= totalGuests)
+                .Select(rt => new AvailableRoomTypeViewModel
                 {
-                    RoomId = r.Id,
-                    RoomNumber = r.RoomNumber,
-                    Floor = r.Floor,
-                    RoomTypeId = r.RoomTypeId,
-                    RoomTypeName = r.RoomType!.Name,
-                    Description = r.RoomType.Description,
-                    PricePerNight = r.RoomType.Price,
-                    Capacity = r.RoomType.Capacity,
-                    BedType = r.RoomType.BedType,
-                    ThumbnailUrl = r.RoomType.ThumbnailUrl,
+                    RoomTypeId = rt.Id,
+                    Name = rt.Name,
+                    Description = rt.Description,
+                    PricePerNight = rt.Price,
+                    Capacity = rt.Capacity,
+                    BedType = rt.BedType,
+                    ThumbnailUrl = rt.ThumbnailUrl,
+                    AvailableRoomCount = rt.Rooms.Count(r =>
+                        r.Status == RoomStatuses.Available
+                        && !r.Bookings.Any(b =>
+                            unavailableBookingStatuses.Contains(b.Status)
+                            && b.CheckInDate < checkOutDate
+                            && b.CheckOutDate > checkInDate
+                        )),
                     Nights = nights,
-                    TotalRoomAmount = nights * r.RoomType.Price
+                    TotalRoomAmount = nights * rt.Price
                 })
+                .Where(rt => rt.AvailableRoomCount > 0)
+                .OrderBy(rt => rt.PricePerNight)
                 .ToListAsync();
 
-            return availableRooms;
+            return availableRoomTypes;
         }
 
         public async Task<RoomDetailViewModel?> GetRoomDetailAsync(
@@ -111,6 +110,9 @@ namespace HotelManagement.Services.Customer
             {
                 return null;
             }
+
+            roomType.ImageUrls = GetRoomTypeImageUrls(roomType.RoomTypeId, roomType.ThumbnailUrl);
+            roomType.ThumbnailUrl = roomType.ImageUrls.FirstOrDefault() ?? roomType.ThumbnailUrl;
 
             var hasSearchCriteria = checkInDate.HasValue || checkOutDate.HasValue;
 
@@ -199,6 +201,45 @@ namespace HotelManagement.Services.Customer
             }
 
             return roomType;
+        }
+
+        private List<string> GetRoomTypeImageUrls(long roomTypeId, string? thumbnailUrl)
+        {
+            var imageUrls = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(_environment.WebRootPath))
+            {
+                return imageUrls;
+            }
+
+            var uploadFolder = Path.Combine(_environment.WebRootPath, "images", "room-types", roomTypeId.ToString());
+
+            if (Directory.Exists(uploadFolder))
+            {
+                imageUrls.AddRange(Directory
+                    .GetFiles(uploadFolder)
+                    .Where(file =>
+                    {
+                        var extension = Path.GetExtension(file).ToLowerInvariant();
+                        return extension is ".jpg" or ".jpeg" or ".png" or ".webp";
+                    })
+                    .OrderBy(file => file)
+                    .Select(file => $"/images/room-types/{roomTypeId}/{Path.GetFileName(file)}"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(thumbnailUrl))
+            {
+                var thumbnailUrls = thumbnailUrl
+                    .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                foreach (var url in thumbnailUrls.Reverse())
+                {
+                    imageUrls.RemoveAll(item => string.Equals(item, url, StringComparison.OrdinalIgnoreCase));
+                    imageUrls.Insert(0, url);
+                }
+            }
+
+            return imageUrls;
         }
     }
 }

@@ -13,14 +13,56 @@ namespace HotelManagement.Controllers
             _publicRoomService = publicRoomService;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(RoomSearchViewModel search)
         {
-            var rooms = await _publicRoomService.GetActiveRoomTypesAsync();
-            return View(rooms);
+            var hasAvailabilitySearch =
+                Request.Query.ContainsKey(nameof(RoomSearchViewModel.CheckInDate)) ||
+                Request.Query.ContainsKey(nameof(RoomSearchViewModel.CheckOutDate)) ||
+                Request.Query.ContainsKey(nameof(RoomSearchViewModel.Adults)) ||
+                Request.Query.ContainsKey(nameof(RoomSearchViewModel.Children));
+
+            var model = new RoomListViewModel
+            {
+                HasAvailabilitySearch = hasAvailabilitySearch,
+                CheckInDate = hasAvailabilitySearch ? search.CheckInDate : DateTime.Today,
+                CheckOutDate = hasAvailabilitySearch ? search.CheckOutDate : DateTime.Today.AddDays(1),
+                Adults = hasAvailabilitySearch ? search.Adults : 1,
+                Children = hasAvailabilitySearch ? search.Children : 0
+            };
+
+            if (!hasAvailabilitySearch)
+            {
+                model.Rooms = await _publicRoomService.GetActiveRoomTypesAsync();
+                return View(model);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model.Rooms = await _publicRoomService.GetActiveRoomTypesAsync();
+                return View(model);
+            }
+
+            var availableRoomTypes = await _publicRoomService.SearchAvailableRoomTypesAsync(search);
+
+            model.Rooms = availableRoomTypes
+                .Select(roomType => new RoomCardViewModel
+                {
+                    RoomTypeId = roomType.RoomTypeId,
+                    Name = roomType.Name,
+                    Description = roomType.Description,
+                    Price = roomType.PricePerNight,
+                    Capacity = roomType.Capacity,
+                    BedType = roomType.BedType,
+                    ThumbnailUrl = roomType.ThumbnailUrl,
+                    AvailableRoomCount = roomType.AvailableRoomCount
+                })
+                .ToList();
+
+            return View(model);
         }
 
         [HttpGet]
-        public async Task<IActionResult> Search(RoomSearchViewModel model)
+        public IActionResult Search(RoomSearchViewModel model)
         {
             var hasSearchQuery =
                 Request.Query.ContainsKey(nameof(RoomSearchViewModel.CheckInDate)) ||
@@ -28,26 +70,18 @@ namespace HotelManagement.Controllers
                 Request.Query.ContainsKey(nameof(RoomSearchViewModel.Adults)) ||
                 Request.Query.ContainsKey(nameof(RoomSearchViewModel.Children));
 
-            model.HasSearched = hasSearchQuery;
-
-            if (!hasSearchQuery)
+            if (hasSearchQuery)
             {
-                model.CheckInDate = DateTime.Today;
-                model.CheckOutDate = DateTime.Today.AddDays(1);
-                model.Adults = 1;
-                model.Children = 0;
-
-                return View(model);
+                return RedirectToAction(nameof(Index), new
+                {
+                    CheckInDate = model.CheckInDate.ToString("yyyy-MM-dd"),
+                    CheckOutDate = model.CheckOutDate.ToString("yyyy-MM-dd"),
+                    model.Adults,
+                    model.Children
+                });
             }
 
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            model.Results = await _publicRoomService.SearchAvailableRoomsAsync(model);
-
-            return View(model);
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]

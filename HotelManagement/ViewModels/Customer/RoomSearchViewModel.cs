@@ -18,7 +18,7 @@ namespace HotelManagement.ViewModels.Customer
 
         public bool HasSearched { get; set; }
 
-        public List<AvailableRoomViewModel> Results { get; set; } = new();
+        public List<AvailableRoomTypeViewModel> Results { get; set; } = new();
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

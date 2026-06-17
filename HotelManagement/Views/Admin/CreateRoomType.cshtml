@@ -8,7 +8,7 @@
 
 <div class="card form-card">
     <div class="card-body">
-        <form asp-controller="Admin" asp-action="CreateRoomType" method="post">
+        <form asp-controller="Admin" asp-action="CreateRoomType" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
 
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
@@ -46,9 +46,16 @@
             </div>
 
             <div class="mb-3">
-                <label asp-for="ThumbnailUrl" class="form-label">Ảnh đại diện</label>
-                <input asp-for="ThumbnailUrl" class="form-control" placeholder="/images/rooms/deluxe.jpg" />
-                <span asp-validation-for="ThumbnailUrl" class="text-danger"></span>
+                <label for="images" class="form-label">Hình ảnh loại phòng</label>
+                <input type="file"
+                       id="images"
+                       name="images"
+                       class="form-control"
+                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                       multiple />
+                <div class="form-text">
+                    Có thể chọn nhiều ảnh. Hỗ trợ JPG, PNG, WEBP, tối đa 5MB mỗi ảnh.
+                </div>
             </div>
 
             <div class="d-flex gap-2">

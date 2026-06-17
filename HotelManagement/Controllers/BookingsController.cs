@@ -36,7 +36,7 @@ namespace HotelManagement.Controllers
             if (model == null)
             {
                 TempData["ErrorMessage"] = "Không tìm thấy phòng hoặc phòng không thể đặt.";
-                return RedirectToAction("Search", "Rooms");
+                return RedirectToAction("Index", "Rooms");
             }
 
             return View(model);
@@ -62,7 +62,7 @@ namespace HotelManagement.Controllers
             if (displayModel == null)
             {
                 TempData["ErrorMessage"] = "Không tìm thấy phòng hoặc phòng không thể đặt.";
-                return RedirectToAction("Search", "Rooms");
+                return RedirectToAction("Index", "Rooms");
             }
 
             displayModel.SpecialRequest = model.SpecialRequest;
@@ -89,7 +89,7 @@ namespace HotelManagement.Controllers
                 if (displayModel == null)
                 {
                     TempData["ErrorMessage"] = result.Message;
-                    return RedirectToAction("Search", "Rooms");
+                    return RedirectToAction("Index", "Rooms");
                 }
 
                 displayModel.SpecialRequest = model.SpecialRequest;
