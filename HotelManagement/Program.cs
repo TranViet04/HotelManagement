@@ -1,6 +1,8 @@
 using HotelManagement.Data;
+using HotelManagement.Hubs;
 using HotelManagement.Services;
 using HotelManagement.Services.Admin;
+using HotelManagement.Services.Chat;
 using HotelManagement.Services.Customer;
 using HotelManagement.Services.Receptionist;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -46,9 +48,11 @@ builder.Services.AddScoped<CustomerProfileService>();
 builder.Services.AddScoped<ReceptionistDashboardService>();
 builder.Services.AddScoped<ReceptionistBookingService>();
 builder.Services.AddScoped<ReceptionistInvoiceService>();
+builder.Services.AddScoped<ChatService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddSignalR();
 
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
@@ -99,6 +103,8 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+app.MapHub<ChatHub>("/chatHub");
 
 using (var scope = app.Services.CreateScope())
 {

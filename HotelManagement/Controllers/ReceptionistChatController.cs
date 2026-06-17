@@ -1,0 +1,41 @@
+using System.Security.Claims;
+using HotelManagement.Constants;
+using HotelManagement.Services.Chat;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace HotelManagement.Controllers
+{
+    [Authorize(Roles = UserRoles.Receptionist)]
+    [Route("Receptionist/Chats")]
+    public class ReceptionistChatController : Controller
+    {
+        private readonly ChatService _chatService;
+
+        public ReceptionistChatController(ChatService chatService)
+        {
+            _chatService = chatService;
+        }
+
+        [HttpGet("")]
+        public async Task<IActionResult> Index(long? conversationId)
+        {
+            var receptionistId = GetCurrentUserId();
+            var model = await _chatService.GetReceptionistChatAsync(receptionistId, conversationId);
+
+            return View(model);
+        }
+
+        private long GetCurrentUserId()
+        {
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!long.TryParse(userIdValue, out var userId))
+            {
+                throw new InvalidOperationException("Cannot identify the current user.");
+            }
+
+            return userId;
+        }
+    }
+}

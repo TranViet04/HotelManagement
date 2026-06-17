@@ -231,6 +231,16 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
+    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Customer"))
+    {
+        <a asp-controller="CustomerChat"
+           asp-action="Index"
+           class="customer-chat-floating-button">
+            <span>💬</span>
+            <span>Nhắn lễ tân</span>
+        </a>
+    }
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

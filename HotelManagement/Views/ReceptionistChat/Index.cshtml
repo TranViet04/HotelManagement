@@ -1,0 +1,300 @@
+@model HotelManagement.ViewModels.Chat.ReceptionistChatViewModel
+
+@{
+    ViewData["Title"] = "Trao đổi khách hàng";
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0";
+}
+
+<section class="chat-page-header bg-white rounded-4 shadow-sm p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+        <div>
+            <div class="text-uppercase text-primary fw-semibold mb-2">
+                Trao đổi khách hàng
+            </div>
+
+            <h1 class="fw-bold mb-2">
+                Chat với khách hàng
+            </h1>
+
+            <p class="text-muted mb-0">
+                Nhận và phản hồi tin nhắn realtime từ khách hàng.
+            </p>
+        </div>
+
+        <a asp-controller="Receptionist"
+           asp-action="Dashboard"
+           class="btn btn-outline-primary">
+            Về dashboard
+        </a>
+    </div>
+</section>
+
+<div class="chat-admin-layout">
+    <aside class="chat-conversation-list">
+        @if (Model.Conversations == null || !Model.Conversations.Any())
+        {
+            <div class="alert alert-info mb-0">
+                Chưa có khách hàng nào nhắn tin.
+            </div>
+        }
+        else
+        {
+            @foreach (var item in Model.Conversations)
+            {
+                <a asp-controller="ReceptionistChat"
+                   asp-action="Index"
+                   asp-route-conversationId="@item.ConversationId"
+                   class="chat-conversation-item @(Model.SelectedConversationId == item.ConversationId ? "active" : "")">
+                    <div class="d-flex justify-content-between gap-2">
+                        <strong>@item.CustomerName</strong>
+
+                        @if (item.UnreadCount > 0)
+                        {
+                            <span class="badge bg-danger">@item.UnreadCount</span>
+                        }
+                    </div>
+
+                    <div class="text-muted small">
+                        @(item.CustomerPhoneNumber ?? item.CustomerEmail ?? "Chưa có liên hệ")
+                    </div>
+
+                    <div class="chat-preview">
+                        @item.LastMessagePreview
+                    </div>
+                </a>
+            }
+        }
+    </aside>
+
+    <main class="chat-window">
+        @if (!Model.SelectedConversationId.HasValue)
+        {
+            <div class="chat-empty-state">
+                Chọn một khách hàng để bắt đầu trao đổi.
+            </div>
+        }
+        else
+        {
+            <div class="chat-selected-title">
+                <strong>@Model.SelectedCustomerName</strong>
+            </div>
+
+            <div id="chatMessages" class="chat-messages">
+                @foreach (var message in Model.Messages)
+                {
+                    <div class="chat-message @(message.IsMine ? "mine" : "theirs")">
+                        <div class="chat-bubble">
+                            <div class="chat-meta">
+                                <strong>@message.SenderName</strong>
+                                <span>@message.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+
+                            @if (message.MessageType == "Image")
+                            {
+                                <a href="@message.ImageUrl" target="_blank">
+                                    <img src="@message.ImageUrl" class="chat-image" alt="Ảnh chat" />
+                                </a>
+                            }
+                            else
+                            {
+                                <div class="chat-text">@message.Content</div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="chat-input-area">
+                <form id="imageForm" enctype="multipart/form-data" class="chat-image-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="conversationId" value="@Model.SelectedConversationId.Value" />
+                    <input id="imageInput"
+                           name="image"
+                           type="file"
+                           accept="image/jpeg,image/png,image/webp"
+                           class="form-control form-control-sm" />
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        Gửi ảnh
+                    </button>
+                </form>
+
+                <form id="messageForm" class="chat-text-form">
+                    <input id="messageInput"
+                           type="text"
+                           class="form-control"
+                           maxlength="2000"
+                           placeholder="Nhập phản hồi..." />
+
+                    <button type="submit" class="btn btn-primary">
+                        Gửi
+                    </button>
+                </form>
+
+                <div id="chatError" class="text-danger small mt-2"></div>
+            </div>
+        }
+    </main>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+
+    <script>
+        const selectedConversationId = @(Model.SelectedConversationId.HasValue ? Model.SelectedConversationId.Value : 0);
+        const currentUserId = @currentUserId;
+        const messagesBox = document.getElementById("chatMessages");
+        const errorBox = document.getElementById("chatError");
+
+        function scrollToBottom() {
+            if (messagesBox) {
+                messagesBox.scrollTop = messagesBox.scrollHeight;
+            }
+        }
+
+        function escapeHtml(value) {
+            const div = document.createElement("div");
+            div.textContent = value || "";
+            return div.innerHTML;
+        }
+
+        function appendMessage(message) {
+            if (!messagesBox) {
+                return;
+            }
+
+            if (Number(message.conversationId) !== Number(selectedConversationId)) {
+                return;
+            }
+
+            const isMine = Number(message.senderId) === Number(currentUserId);
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "chat-message " + (isMine ? "mine" : "theirs");
+
+            const bubble = document.createElement("div");
+            bubble.className = "chat-bubble";
+
+            const meta = document.createElement("div");
+            meta.className = "chat-meta";
+            meta.innerHTML = `<strong>${escapeHtml(message.senderName)}</strong><span>${escapeHtml(message.createdAtText)}</span>`;
+
+            bubble.appendChild(meta);
+
+            if (message.messageType === "Image") {
+                const link = document.createElement("a");
+                link.href = message.imageUrl;
+                link.target = "_blank";
+
+                const img = document.createElement("img");
+                img.src = message.imageUrl;
+                img.alt = "Ảnh chat";
+                img.className = "chat-image";
+
+                link.appendChild(img);
+                bubble.appendChild(link);
+            } else {
+                const text = document.createElement("div");
+                text.className = "chat-text";
+                text.textContent = message.content;
+                bubble.appendChild(text);
+            }
+
+            wrapper.appendChild(bubble);
+            messagesBox.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("ReceiveMessage", function (message) {
+            appendMessage(message);
+        });
+
+        connection.on("ConversationUpdated", function (conversationId) {
+            if (Number(conversationId) !== Number(selectedConversationId)) {
+                const title = document.title.replace(" *", "");
+                document.title = title + " *";
+            }
+        });
+
+        async function startChat() {
+            try {
+                await connection.start();
+
+                if (selectedConversationId > 0) {
+                    await connection.invoke("JoinConversation", selectedConversationId);
+                }
+
+                scrollToBottom();
+            } catch (err) {
+                console.error(err);
+                if (errorBox) {
+                    errorBox.textContent = "Không thể kết nối chat. Đang thử lại...";
+                }
+                setTimeout(startChat, 3000);
+            }
+        }
+
+        if (document.getElementById("messageForm")) {
+            document.getElementById("messageForm").addEventListener("submit", async function (event) {
+                event.preventDefault();
+
+                const input = document.getElementById("messageInput");
+                const content = input.value.trim();
+
+                if (!content || selectedConversationId <= 0) {
+                    return;
+                }
+
+                try {
+                    errorBox.textContent = "";
+                    await connection.invoke("SendTextMessage", selectedConversationId, content);
+                    input.value = "";
+                } catch (err) {
+                    console.error(err);
+                    errorBox.textContent = "Không gửi được tin nhắn.";
+                }
+            });
+        }
+
+        if (document.getElementById("imageForm")) {
+            document.getElementById("imageForm").addEventListener("submit", async function (event) {
+                event.preventDefault();
+
+                const input = document.getElementById("imageInput");
+
+                if (!input.files || input.files.length === 0) {
+                    errorBox.textContent = "Vui lòng chọn ảnh.";
+                    return;
+                }
+
+                const formData = new FormData(event.target);
+
+                try {
+                    errorBox.textContent = "";
+
+                    const response = await fetch("/Chat/UploadImage", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const result = await response.json();
+                        errorBox.textContent = result.message || "Không gửi được ảnh.";
+                        return;
+                    }
+
+                    input.value = "";
+                } catch (err) {
+                    console.error(err);
+                    errorBox.textContent = "Không gửi được ảnh.";
+                }
+            });
+        }
+
+        startChat();
+    </script>
+}

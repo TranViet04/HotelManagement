@@ -30,6 +30,10 @@ namespace HotelManagement.Data
 
         public DbSet<ActivityLog> ActivityLogs { get; set; }
 
+        public DbSet<ChatConversation> ChatConversations { get; set; }
+
+        public DbSet<ChatMessage> ChatMessages { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -44,6 +48,8 @@ namespace HotelManagement.Data
             ConfigureInvoice(modelBuilder);
             ConfigurePayment(modelBuilder);
             ConfigureActivityLog(modelBuilder);
+            ConfigureChatConversation(modelBuilder);
+            ConfigureChatMessage(modelBuilder);
         }
 
         private static void ConfigureUser(ModelBuilder modelBuilder)
@@ -362,6 +368,65 @@ namespace HotelManagement.Data
                 entity.HasOne(a => a.User)
                     .WithMany(u => u.ActivityLogs)
                     .HasForeignKey(a => a.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureChatConversation(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<ChatConversation>(entity =>
+            {
+                entity.HasIndex(c => c.CustomerId);
+                entity.HasIndex(c => c.AssignedReceptionistId);
+                entity.HasIndex(c => c.Status);
+                entity.HasIndex(c => c.LastMessageAt);
+
+                entity.Property(c => c.Status)
+                    .IsRequired()
+                    .HasMaxLength(30);
+
+                entity.HasOne(c => c.Customer)
+                    .WithMany()
+                    .HasForeignKey(c => c.CustomerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.AssignedReceptionist)
+                    .WithMany()
+                    .HasForeignKey(c => c.AssignedReceptionistId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureChatMessage(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<ChatMessage>(entity =>
+            {
+                entity.HasIndex(m => m.ConversationId);
+                entity.HasIndex(m => m.SenderId);
+                entity.HasIndex(m => m.MessageType);
+                entity.HasIndex(m => m.CreatedAt);
+
+                entity.Property(m => m.MessageType)
+                    .IsRequired()
+                    .HasMaxLength(30);
+
+                entity.Property(m => m.Content)
+                    .HasMaxLength(2000);
+
+                entity.Property(m => m.ImageUrl)
+                    .HasMaxLength(500);
+
+                entity.Property(m => m.OriginalFileName)
+                    .HasMaxLength(255);
+
+                entity.HasOne(m => m.Conversation)
+                    .WithMany(c => c.Messages)
+                    .HasForeignKey(m => m.ConversationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(m => m.Sender)
+                    .WithMany()
+                    .HasForeignKey(m => m.SenderId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
         }
