@@ -1,0 +1,174 @@
+@model HotelManagement.ViewModels.Payment.CheckoutViewModel
+
+@{
+    ViewData["Title"] = "Thanh toán Sepay";
+    var expiresUnix = new DateTimeOffset(Model.QrExpiresAt).ToUnixTimeMilliseconds();
+}
+
+<section class="booking-create-header shadow-sm p-4 p-lg-5 mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <div class="text-uppercase text-primary fw-semibold mb-2">Thanh toán online</div>
+            <h1 class="fw-bold mb-3">Quét mã QR để thanh toán</h1>
+            <p class="text-muted mb-0">
+                Mã đặt phòng: <strong>@Model.BookingCode</strong>
+            </p>
+        </div>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm text-center">
+            <div class="card-body p-4">
+                @if (Model.IsQrExpired)
+                {
+                    <div class="alert alert-warning">
+                        Mã QR đã hết hạn. Vui lòng tạo mã mới.
+                    </div>
+
+                    <form asp-controller="Payment" asp-action="RegenerateQr" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="paymentId" value="@Model.PaymentId" />
+                        <input type="hidden" name="bookingId" value="@Model.BookingId" />
+                        <button type="submit" class="btn btn-primary">Tạo mã QR mới</button>
+                    </form>
+                }
+                else
+                {
+                    <img src="@Model.QrCodeUrl"
+                         alt="Mã QR thanh toán"
+                         class="img-fluid mb-3"
+                         style="max-width: 280px;" />
+
+                    <p class="text-muted small mb-2">
+                        Mã QR hết hạn sau:
+                        <strong id="countdown">--:--</strong>
+                    </p>
+
+                    <div class="spinner-border text-primary spinner-border-sm d-none" id="paymentSpinner" role="status">
+                        <span class="visually-hidden">Đang kiểm tra...</span>
+                    </div>
+                    <p class="text-muted small" id="paymentStatusText">Đang chờ xác nhận thanh toán...</p>
+                    
+                    <div class="mt-4 pt-3 border-top">
+                        <p class="text-muted small mb-2">Bạn muốn thay đổi quyết định?</p>
+                        <a asp-controller="Bookings" asp-action="Cancel" asp-route-id="@Model.BookingId" class="btn btn-outline-danger">
+                            Hủy đặt phòng
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">Thông tin chuyển khoản</h5>
+
+                <div class="room-info-list">
+                    <div><span class="text-muted">Ngân hàng:</span> <strong>@Model.BankName</strong></div>
+                    <div><span class="text-muted">Số tài khoản:</span> <strong>@Model.BankAccount</strong></div>
+                    <div><span class="text-muted">Người thụ hưởng:</span> <strong>@Model.AccountName</strong></div>
+                    <div><span class="text-muted">Số tiền:</span> <strong class="text-primary">@Model.TotalAmount.ToString("N0") VND</strong></div>
+                    <div><span class="text-muted">Nội dung CK:</span> <strong>@Model.TransferContent</strong></div>
+                </div>
+
+                <div class="alert alert-info mt-3 mb-0">
+                    Vui lòng chuyển khoản <strong>đúng số tiền</strong> và ghi <strong>đúng nội dung</strong> để hệ thống tự động xác nhận.
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">Chi tiết đơn hàng</h5>
+
+                <div class="room-info-list mb-3">
+                    <div><span class="text-muted">Phòng:</span> <strong>@Model.RoomNumber — @Model.RoomTypeName</strong></div>
+                    <div><span class="text-muted">Nhận phòng:</span> <strong>@Model.CheckInDate.ToString("dd/MM/yyyy")</strong></div>
+                    <div><span class="text-muted">Trả phòng:</span> <strong>@Model.CheckOutDate.ToString("dd/MM/yyyy")</strong></div>
+                    <div><span class="text-muted">Số đêm:</span> <strong>@Model.Nights</strong></div>
+                </div>
+
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Hạng mục</th>
+                            <th class="text-end">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Tiền phòng</td>
+                            <td class="text-end">@Model.RoomAmount.ToString("N0") VND</td>
+                        </tr>
+                        @foreach (var service in Model.Services)
+                        {
+                            <tr>
+                                <td>@service.Name (x@service.Quantity)</td>
+                                <td class="text-end">@service.TotalPrice.ToString("N0") VND</td>
+                            </tr>
+                        }
+                        <tr class="fw-bold">
+                            <td>Tổng cộng</td>
+                            <td class="text-end text-primary">@Model.TotalAmount.ToString("N0") VND</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @if (!Model.IsQrExpired)
+    {
+        <script>
+            (function () {
+                const expiresAt = @expiresUnix;
+                const paymentId = @Model.PaymentId;
+                const bookingId = @Model.BookingId;
+                const countdownEl = document.getElementById('countdown');
+                const statusText = document.getElementById('paymentStatusText');
+                const spinner = document.getElementById('paymentSpinner');
+
+                function updateCountdown() {
+                    const remaining = expiresAt - Date.now();
+
+                    if (remaining <= 0) {
+                        countdownEl.textContent = '00:00';
+                        location.reload();
+                        return;
+                    }
+
+                    const minutes = Math.floor(remaining / 60000);
+                    const seconds = Math.floor((remaining % 60000) / 1000);
+                    countdownEl.textContent =
+                        String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+                }
+
+                async function pollPaymentStatus() {
+                    try {
+                        spinner.classList.remove('d-none');
+                        const response = await fetch('/Payment/Status?paymentId=' + paymentId);
+                        const data = await response.json();
+
+                        if (data.status === 'Paid') {
+                            window.location.href = '/Payment/Success?bookingId=' + bookingId;
+                        }
+                    } catch (e) {
+                        statusText.textContent = 'Đang chờ xác nhận thanh toán...';
+                    } finally {
+                        spinner.classList.add('d-none');
+                    }
+                }
+
+                updateCountdown();
+                setInterval(updateCountdown, 1000);
+                setInterval(pollPaymentStatus, 5000);
+            })();
+        </script>
+    }
+}

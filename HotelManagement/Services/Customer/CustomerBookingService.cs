@@ -1,6 +1,8 @@
 using HotelManagement.Constants;
 using HotelManagement.Data;
 using HotelManagement.Models;
+using HotelManagement.Services.Cancellation;
+using HotelManagement.Services.Payments;
 using HotelManagement.ViewModels.Customer;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,10 +11,17 @@ namespace HotelManagement.Services.Customer
     public class CustomerBookingService
     {
         private readonly HotelDbContext _context;
+        private readonly CancellationService _cancellationService;
+        private readonly PaymentService _paymentService;
 
-        public CustomerBookingService(HotelDbContext context)
+        public CustomerBookingService(
+            HotelDbContext context,
+            CancellationService cancellationService,
+            PaymentService paymentService)
         {
             _context = context;
+            _cancellationService = cancellationService;
+            _paymentService = paymentService;
         }
 
         public async Task<CreateBookingViewModel?> PrepareCreateBookingAsync(
@@ -101,6 +110,81 @@ namespace HotelManagement.Services.Customer
 
         public async Task<CustomerBookingResult> CreateBookingAsync(CreateBookingViewModel model, long customerId)
         {
+            var selectModel = await PrepareSelectServicesAsync(
+                model.RoomId,
+                model.CheckInDate,
+                model.CheckOutDate,
+                model.Adults,
+                model.Children);
+
+            if (selectModel == null)
+            {
+                return CustomerBookingResult.Failure("Không tìm thấy phòng hoặc phòng không thể đặt.");
+            }
+
+            selectModel.SpecialRequest = model.SpecialRequest;
+
+            return await CreateBookingWithServicesAsync(selectModel, customerId);
+        }
+
+        public async Task<SelectServicesViewModel?> PrepareSelectServicesAsync(
+            long roomId,
+            DateTime? checkInDate,
+            DateTime? checkOutDate,
+            int adults,
+            int children)
+        {
+            var bookingModel = await PrepareCreateBookingAsync(
+                roomId,
+                checkInDate,
+                checkOutDate,
+                adults,
+                children);
+
+            if (bookingModel == null || !bookingModel.IsAvailableForSelectedDates)
+            {
+                return null;
+            }
+
+            var services = await _context.Services
+                .AsNoTracking()
+                .Where(s => s.Status == "Active")
+                .OrderBy(s => s.Category)
+                .ThenBy(s => s.Name)
+                .Select(s => new ServiceSelectionItemViewModel
+                {
+                    ServiceId = s.Id,
+                    Name = s.Name,
+                    Category = s.Category,
+                    Unit = s.Unit,
+                    Price = s.Price,
+                    IsSelected = false,
+                    Quantity = 1
+                })
+                .ToListAsync();
+
+            return new SelectServicesViewModel
+            {
+                RoomId = bookingModel.RoomId,
+                RoomNumber = bookingModel.RoomNumber,
+                RoomTypeName = bookingModel.RoomTypeName,
+                PricePerNight = bookingModel.PricePerNight,
+                Capacity = bookingModel.Capacity,
+                ThumbnailUrl = bookingModel.ThumbnailUrl,
+                CheckInDate = bookingModel.CheckInDate,
+                CheckOutDate = bookingModel.CheckOutDate,
+                Adults = bookingModel.Adults,
+                Children = bookingModel.Children,
+                Nights = bookingModel.Nights,
+                TotalRoomAmount = bookingModel.TotalRoomAmount,
+                AvailableServices = services
+            };
+        }
+
+        public async Task<CustomerBookingResult> CreateBookingWithServicesAsync(
+            SelectServicesViewModel model,
+            long customerId)
+        {
             var checkInDate = model.CheckInDate.Date;
             var checkOutDate = model.CheckOutDate.Date;
 
@@ -119,16 +203,6 @@ namespace HotelManagement.Services.Customer
                 return CustomerBookingResult.Failure("Ngày trả phòng phải lớn hơn ngày nhận phòng.");
             }
 
-            if (model.Adults <= 0)
-            {
-                return CustomerBookingResult.Failure("Số người lớn phải lớn hơn 0.");
-            }
-
-            if (model.Children < 0)
-            {
-                return CustomerBookingResult.Failure("Số trẻ em không hợp lệ.");
-            }
-
             var room = await _context.Rooms
                 .Include(r => r.RoomType)
                 .FirstOrDefaultAsync(r => r.Id == model.RoomId);
@@ -141,11 +215,6 @@ namespace HotelManagement.Services.Customer
             if (room.Status != RoomStatuses.Available)
             {
                 return CustomerBookingResult.Failure("Phòng hiện không ở trạng thái có thể đặt.");
-            }
-
-            if (room.RoomType.Status != "Active")
-            {
-                return CustomerBookingResult.Failure("Loại phòng không còn hoạt động.");
             }
 
             if (model.Adults + model.Children > room.RoomType.Capacity)
@@ -163,6 +232,44 @@ namespace HotelManagement.Services.Customer
             var nights = (checkOutDate - checkInDate).Days;
             var totalRoomAmount = nights * room.RoomType.Price;
             var bookingCode = await GenerateBookingCodeAsync();
+            var now = DateTime.Now;
+
+            var selectedServices = model.AvailableServices
+                .Where(s => s.IsSelected && s.Quantity > 0)
+                .ToList();
+
+            var activeServiceIds = await _context.Services
+                .Where(s => s.Status == "Active")
+                .Select(s => new { s.Id, s.Price })
+                .ToListAsync();
+
+            decimal totalServiceAmount = 0;
+            var bookingServices = new List<BookingService>();
+
+            foreach (var selected in selectedServices)
+            {
+                var service = activeServiceIds.FirstOrDefault(s => s.Id == selected.ServiceId);
+
+                if (service == null)
+                {
+                    continue;
+                }
+
+                var lineTotal = service.Price * selected.Quantity;
+                totalServiceAmount += lineTotal;
+
+                bookingServices.Add(new BookingService
+                {
+                    ServiceId = service.Id,
+                    Quantity = selected.Quantity,
+                    UnitPrice = service.Price,
+                    TotalPrice = lineTotal,
+                    CreatedByUserId = customerId,
+                    UsedAt = now
+                });
+            }
+
+            var totalAmount = totalRoomAmount + totalServiceAmount;
 
             var booking = new Booking
             {
@@ -176,21 +283,48 @@ namespace HotelManagement.Services.Customer
                 Children = model.Children,
                 Status = BookingStatuses.Pending,
                 TotalRoomAmount = totalRoomAmount,
-                TotalServiceAmount = 0,
-                TotalAmount = totalRoomAmount,
+                TotalServiceAmount = totalServiceAmount,
+                TotalAmount = totalAmount,
                 SpecialRequest = model.SpecialRequest,
-                CreatedAt = DateTime.Now
+                CreatedAt = now
             };
 
+            foreach (var bs in bookingServices)
+            {
+                booking.BookingServices.Add(bs);
+            }
+
             _context.Bookings.Add(booking);
+            await _context.SaveChangesAsync();
+
+            var invoiceCode = await GenerateInvoiceCodeAsync();
+            var invoice = new Invoice
+            {
+                InvoiceCode = invoiceCode,
+                BookingId = booking.Id,
+                RoomAmount = totalRoomAmount,
+                ServiceAmount = totalServiceAmount,
+                TotalAmount = totalAmount,
+                PaidAmount = 0,
+                RemainingAmount = totalAmount,
+                Status = InvoiceStatuses.Unpaid,
+                IssuedByUserId = customerId,
+                IssuedAt = now
+            };
+
+            _context.Invoices.Add(invoice);
+            await _context.SaveChangesAsync();
+
+            await _paymentService.CreatePendingSepayPaymentAsync(invoice, customerId);
 
             _context.ActivityLogs.Add(new ActivityLog
             {
                 UserId = customerId,
                 Action = "CreateBooking",
                 EntityName = "Booking",
-                Description = $"Customer tạo booking online cho phòng {room.RoomNumber}",
-                CreatedAt = DateTime.Now
+                EntityId = booking.Id,
+                Description = $"Customer tạo booking online cho phòng {room.RoomNumber}, chờ thanh toán Sepay",
+                CreatedAt = now
             });
 
             await _context.SaveChangesAsync();
@@ -311,6 +445,8 @@ namespace HotelManagement.Services.Customer
                 .AsNoTracking()
                 .Include(b => b.Room)
                     .ThenInclude(r => r!.RoomType)
+                .Include(b => b.Invoice)
+                    .ThenInclude(i => i!.Payments)
                 .FirstOrDefaultAsync(b => b.Id == bookingId && b.CustomerId == customerId);
 
             if (booking == null)
@@ -319,6 +455,18 @@ namespace HotelManagement.Services.Customer
             }
 
             var canCancel = CanCancelBookingStatus(booking.Status);
+            var paidAt = booking.Invoice?.PaidAt
+                ?? booking.Invoice?.Payments
+                    .Where(p => p.Status == PaymentStatuses.Paid)
+                    .OrderByDescending(p => p.PaidAt)
+                    .Select(p => p.PaidAt)
+                    .FirstOrDefault();
+
+            var cancellation = _cancellationService.CalculateRefund(
+                booking.TotalAmount,
+                booking.CheckInDate,
+                DateTime.Now,
+                paidAt);
 
             return new CancelBookingViewModel
             {
@@ -336,7 +484,12 @@ namespace HotelManagement.Services.Customer
                 CanCancel = canCancel,
                 CancelBlockReason = canCancel
                     ? null
-                    : "Chỉ có thể hủy đặt phòng ở trạng thái Chờ xác nhận hoặc Đã xác nhận."
+                    : "Chỉ có thể hủy đặt phòng ở trạng thái Chờ xác nhận hoặc Đã xác nhận.",
+                RefundPercent = cancellation.RefundPercent,
+                RefundAmount = cancellation.RefundAmount,
+                CancellationFee = cancellation.CancellationFee,
+                PolicyDescription = cancellation.PolicyDescription,
+                IsPaidBooking = cancellation.IsPaidBooking
             };
         }
 
@@ -346,6 +499,8 @@ namespace HotelManagement.Services.Customer
             string? cancelReason)
         {
             var booking = await _context.Bookings
+                .Include(b => b.Invoice)
+                    .ThenInclude(i => i!.Payments)
                 .FirstOrDefaultAsync(b => b.Id == bookingId && b.CustomerId == customerId);
 
             if (booking == null)
@@ -370,10 +525,57 @@ namespace HotelManagement.Services.Customer
                 return CustomerBookingResult.Failure("Lý do hủy tối đa 500 ký tự.");
             }
 
+            var now = DateTime.Now;
+            var paidAt = booking.Invoice?.PaidAt
+                ?? booking.Invoice?.Payments
+                    .Where(p => p.Status == PaymentStatuses.Paid)
+                    .OrderByDescending(p => p.PaidAt)
+                    .Select(p => p.PaidAt)
+                    .FirstOrDefault();
+
+            var cancellation = _cancellationService.CalculateRefund(
+                booking.TotalAmount,
+                booking.CheckInDate,
+                now,
+                paidAt);
+
             booking.Status = BookingStatuses.Cancelled;
             booking.CancelReason = cancelReason;
-            booking.CancelledAt = DateTime.Now;
-            booking.UpdatedAt = DateTime.Now;
+            booking.CancelledAt = now;
+            booking.UpdatedAt = now;
+            booking.RefundAmount = cancellation.RefundAmount;
+
+            if (booking.Invoice != null && cancellation.IsPaidBooking)
+            {
+                var paidPayment = booking.Invoice.Payments
+                    .FirstOrDefault(p => p.Status == PaymentStatuses.Paid);
+
+                if (paidPayment != null && cancellation.RefundPercent == 100)
+                {
+                    paidPayment.Status = PaymentStatuses.Refunded;
+                    booking.Invoice.Status = InvoiceStatuses.Cancelled;
+                }
+                else if (paidPayment != null && cancellation.RefundPercent > 0)
+                {
+                    paidPayment.Note = $"Hoàn tiền {cancellation.RefundAmount:N0} VND ({cancellation.RefundPercent}%)";
+                    booking.Invoice.Status = InvoiceStatuses.PartiallyPaid;
+                    booking.Invoice.RemainingAmount = cancellation.CancellationFee;
+                }
+                else if (paidPayment != null)
+                {
+                    booking.Invoice.Status = InvoiceStatuses.Paid;
+                }
+            }
+            else if (booking.Invoice != null)
+            {
+                booking.Invoice.Status = InvoiceStatuses.Cancelled;
+
+                foreach (var payment in booking.Invoice.Payments
+                             .Where(p => p.Status == PaymentStatuses.Pending))
+                {
+                    payment.Status = PaymentStatuses.Cancelled;
+                }
+            }
 
             _context.ActivityLogs.Add(new ActivityLog
             {
@@ -381,13 +583,17 @@ namespace HotelManagement.Services.Customer
                 Action = "CancelBooking",
                 EntityName = "Booking",
                 EntityId = booking.Id,
-                Description = $"Customer hủy booking {booking.BookingCode}. Lý do: {cancelReason}",
-                CreatedAt = DateTime.Now
+                Description = $"Customer hủy booking {booking.BookingCode}. Lý do: {cancelReason}. Hoàn tiền: {cancellation.RefundAmount:N0} VND ({cancellation.PolicyDescription})",
+                CreatedAt = now
             });
 
             await _context.SaveChangesAsync();
 
-            return CustomerBookingResult.Success(booking.Id, booking.BookingCode);
+            var message = cancellation.IsPaidBooking
+                ? $"Đã hủy đặt phòng. {cancellation.PolicyDescription} Số tiền hoàn: {cancellation.RefundAmount:N0} VND."
+                : "Đã hủy đặt phòng thành công.";
+
+            return CustomerBookingResult.Success(booking.Id, booking.BookingCode, message);
         }
 
         private async Task<bool> IsRoomAvailableAsync(long roomId, DateTime checkInDate, DateTime checkOutDate)
@@ -414,6 +620,22 @@ namespace HotelManagement.Services.Customer
         {
             return status == BookingStatuses.Pending
                 || status == BookingStatuses.Confirmed;
+        }
+
+        private async Task<string> GenerateInvoiceCodeAsync()
+        {
+            for (var i = 0; i < 5; i++)
+            {
+                var code = $"INV{DateTime.Now:yyyyMMddHHmmssfff}{Random.Shared.Next(100, 999)}";
+                var exists = await _context.Invoices.AnyAsync(i => i.InvoiceCode == code);
+
+                if (!exists)
+                {
+                    return code;
+                }
+            }
+
+            return $"INV{Guid.NewGuid().ToString("N")[..12].ToUpper()}";
         }
 
         private async Task<string> GenerateBookingCodeAsync()

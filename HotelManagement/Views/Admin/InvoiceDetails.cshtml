@@ -213,7 +213,7 @@
                             <td>@payment.Amount.ToString("N0") đ</td>
                             <td>@payment.Status</td>
                             <td>@(payment.CreatedByName ?? "Không xác định")</td>
-                            <td>@payment.PaidAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@(payment.PaidAt?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
                             <td>@payment.Note</td>
                         </tr>
                     }

@@ -46,12 +46,14 @@ namespace HotelManagement.Services.Admin
 
                 TodayRevenue = await _context.Payments
                     .Where(p => p.Status == PaymentStatuses.Paid
+                        && p.PaidAt.HasValue
                         && p.PaidAt >= today
                         && p.PaidAt < tomorrow)
                     .SumAsync(p => (decimal?)p.Amount) ?? 0,
 
                 MonthRevenue = await _context.Payments
                     .Where(p => p.Status == PaymentStatuses.Paid
+                        && p.PaidAt.HasValue
                         && p.PaidAt >= firstDayOfMonth
                         && p.PaidAt < firstDayOfNextMonth)
                     .SumAsync(p => (decimal?)p.Amount) ?? 0

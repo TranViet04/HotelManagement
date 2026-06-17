@@ -10,14 +10,14 @@ namespace HotelManagement.Services.Customer
 
         public string? BookingCode { get; set; }
 
-        public static CustomerBookingResult Success(long bookingId, string bookingCode)
+        public static CustomerBookingResult Success(long bookingId, string bookingCode, string? message = null)
         {
             return new CustomerBookingResult
             {
                 Succeeded = true,
                 BookingId = bookingId,
                 BookingCode = bookingCode,
-                Message = "Đặt phòng thành công"
+                Message = message ?? "Đặt phòng thành công"
             };
         }
 

@@ -74,7 +74,7 @@ namespace HotelManagement.ViewModels.Admin
 
         public string Status { get; set; } = string.Empty;
 
-        public DateTime PaidAt { get; set; }
+        public DateTime? PaidAt { get; set; }
 
         public string? CreatedByName { get; set; }
 

@@ -80,6 +80,8 @@ namespace HotelManagement.ViewModels.Receptionist
 
         public List<SelectListItem> PaymentMethodOptions { get; set; } = new();
 
+        public List<ReceptionistBookingServiceItemViewModel> UnpaidServices { get; set; } = new();
+
         public List<ReceptionistInvoicePaymentLineViewModel> ExistingPayments { get; set; } = new();
     }
 }

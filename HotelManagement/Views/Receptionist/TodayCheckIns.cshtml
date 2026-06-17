@@ -138,9 +138,19 @@
                                 </td>
 
                                 <td>
-                                    <span class="badge @GetStatusBadgeClass(booking.Status)">
-                                        @GetStatusText(booking.Status)
-                                    </span>
+                                    <div class="d-flex flex-column gap-1 align-items-start">
+                                        <span class="badge @GetStatusBadgeClass(booking.Status)">
+                                            @GetStatusText(booking.Status)
+                                        </span>
+                                        @if (booking.InvoiceStatus == "Paid")
+                                        {
+                                            <span class="badge bg-success">Đã thanh toán</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Chưa thanh toán</span>
+                                        }
+                                    </div>
                                 </td>
 
                                 <td class="text-end">

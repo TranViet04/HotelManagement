@@ -46,60 +46,122 @@ namespace HotelManagement.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateBookingViewModel model)
         {
+            return await SelectServices(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SelectServices(
+            long roomId,
+            DateTime? checkInDate,
+            DateTime? checkOutDate,
+            int adults = 1,
+            int children = 0)
+        {
+            var model = await _customerBookingService.PrepareSelectServicesAsync(
+                roomId,
+                checkInDate,
+                checkOutDate,
+                adults,
+                children);
+
+            if (model == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy phòng hoặc phòng không còn trống.";
+                return RedirectToAction("Search", "Rooms");
+            }
+
+            return View("SelectServices", model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SelectServices(CreateBookingViewModel model)
+        {
+            var selectModel = await _customerBookingService.PrepareSelectServicesAsync(
+                model.RoomId,
+                model.CheckInDate,
+                model.CheckOutDate,
+                model.Adults,
+                model.Children);
+
+            if (selectModel == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy phòng hoặc phòng không còn trống.";
+                return RedirectToAction("Search", "Rooms");
+            }
+
+            selectModel.SpecialRequest = model.SpecialRequest;
+
+            if (!ModelState.IsValid)
+            {
+                var displayModel = await _customerBookingService.PrepareCreateBookingAsync(
+                    model.RoomId,
+                    model.CheckInDate,
+                    model.CheckOutDate,
+                    model.Adults,
+                    model.Children);
+
+                if (displayModel == null)
+                {
+                    return RedirectToAction("Search", "Rooms");
+                }
+
+                displayModel.SpecialRequest = model.SpecialRequest;
+                return View("Create", displayModel);
+            }
+
+            return View("SelectServices", selectModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmBooking(SelectServicesViewModel model)
+        {
             if (!TryGetCurrentUserId(out var customerId))
             {
                 return Challenge();
             }
 
-            var displayModel = await _customerBookingService.PrepareCreateBookingAsync(
-                model.RoomId,
-                model.CheckInDate,
-                model.CheckOutDate,
-                model.Adults,
-                model.Children
-            );
-
-            if (displayModel == null)
-            {
-                TempData["ErrorMessage"] = "Không tìm thấy phòng hoặc phòng không thể đặt.";
-                return RedirectToAction("Search", "Rooms");
-            }
-
-            displayModel.SpecialRequest = model.SpecialRequest;
-
             if (!ModelState.IsValid)
             {
-                return View(displayModel);
+                return View("SelectServices", model);
             }
 
-            var result = await _customerBookingService.CreateBookingAsync(model, customerId);
+            var result = await _customerBookingService.CreateBookingWithServicesAsync(model, customerId);
 
             if (!result.Succeeded)
             {
                 ModelState.AddModelError(string.Empty, result.Message);
 
-                displayModel = await _customerBookingService.PrepareCreateBookingAsync(
+                var refreshed = await _customerBookingService.PrepareSelectServicesAsync(
                     model.RoomId,
                     model.CheckInDate,
                     model.CheckOutDate,
                     model.Adults,
-                    model.Children
-                );
+                    model.Children);
 
-                if (displayModel == null)
+                if (refreshed == null)
                 {
                     TempData["ErrorMessage"] = result.Message;
                     return RedirectToAction("Search", "Rooms");
                 }
 
-                displayModel.SpecialRequest = model.SpecialRequest;
+                refreshed.SpecialRequest = model.SpecialRequest;
 
-                return View(displayModel);
+                foreach (var service in refreshed.AvailableServices)
+                {
+                    var selected = model.AvailableServices.FirstOrDefault(s => s.ServiceId == service.ServiceId);
+                    if (selected != null)
+                    {
+                        service.IsSelected = selected.IsSelected;
+                        service.Quantity = selected.Quantity;
+                    }
+                }
+
+                return View("SelectServices", refreshed);
             }
 
-            TempData["SuccessMessage"] = $"Đặt phòng thành công. Mã đặt phòng: {result.BookingCode}. Vui lòng chờ lễ tân xác nhận.";
-
-            return RedirectToAction(nameof(MyBookings));
+            return RedirectToAction("Checkout", "Payment", new { bookingId = result.BookingId });
         }
 
         [HttpGet]
@@ -211,7 +273,7 @@ namespace HotelManagement.Controllers
                 return View(displayModel);
             }
 
-            TempData["SuccessMessage"] = $"Đã hủy đặt phòng {result.BookingCode} thành công.";
+            TempData["SuccessMessage"] = result.Message ?? $"Đã hủy đặt phòng {result.BookingCode} thành công.";
 
             return RedirectToAction(nameof(MyBookings));
         }

@@ -13,15 +13,18 @@ namespace HotelManagement.Controllers
         private readonly ReceptionistDashboardService _dashboardService;
         private readonly ReceptionistBookingService _bookingService;
         private readonly ReceptionistInvoiceService _invoiceService;
+        private readonly ReceptionistOperationService _operationService;
 
         public ReceptionistController(
             ReceptionistDashboardService dashboardService,
             ReceptionistBookingService bookingService,
-            ReceptionistInvoiceService invoiceService)
+            ReceptionistInvoiceService invoiceService,
+            ReceptionistOperationService operationService)
         {
             _dashboardService = dashboardService;
             _bookingService = bookingService;
             _invoiceService = invoiceService;
+            _operationService = operationService;
         }
 
         public async Task<IActionResult> Dashboard()
@@ -105,9 +108,117 @@ namespace HotelManagement.Controllers
             return RedirectToAction(nameof(BookingDetails), new { id });
         }
 
-        public IActionResult CreateWalkInBooking()
+        [HttpGet]
+        public async Task<IActionResult> CreateWalkInBooking()
         {
-            return View("Placeholder", "Tạo đặt phòng trực tiếp");
+            var model = await _bookingService.PrepareCreateWalkInBookingAsync();
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAvailableRooms(DateTime checkInDate, DateTime checkOutDate)
+        {
+            var options = await _bookingService.GetAvailableRoomOptionsAsync(checkInDate, checkOutDate);
+            return Json(options);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateWalkInBooking(CreateWalkInBookingViewModel model)
+        {
+            if (!TryGetCurrentUserId(out var receptionistId))
+            {
+                return Challenge();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model = await _bookingService.PrepareCreateWalkInBookingAsync(model);
+                return View(model);
+            }
+
+            var result = await _bookingService.CreateWalkInBookingAsync(model, receptionistId);
+
+            if (!result.Succeeded)
+            {
+                ModelState.AddModelError(string.Empty, result.Message);
+                model = await _bookingService.PrepareCreateWalkInBookingAsync(model);
+                return View(model);
+            }
+
+            TempData["SuccessMessage"] = result.Message;
+
+            return RedirectToAction(nameof(WalkInPayment), new { bookingId = result.BookingId, method = model.PaymentMethod });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> WalkInPayment(long bookingId, string method)
+        {
+            var booking = await _bookingService.GetBookingDetailAsync(bookingId);
+            if (booking == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy booking.";
+                return RedirectToAction(nameof(Bookings));
+            }
+
+            ViewBag.PaymentMethod = method;
+            return View(booking);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> WalkInPaymentQrTab(long bookingId)
+        {
+            var booking = await _bookingService.GetBookingDetailAsync(bookingId);
+            if (booking == null) return NotFound();
+            
+            return View(booking);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmWalkInCashPayment(long bookingId)
+        {
+            if (!TryGetCurrentUserId(out var receptionistId))
+            {
+                return Challenge();
+            }
+
+            var booking = await _bookingService.GetBookingDetailAsync(bookingId);
+            if (booking == null || booking.InvoiceId == null) 
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy hóa đơn của booking.";
+                return RedirectToAction(nameof(Bookings));
+            }
+
+            var paymentModel = new RecordPaymentViewModel
+            {
+                InvoiceId = booking.InvoiceId.Value,
+                PaymentMethod = "Cash",
+                Amount = booking.TotalAmount,
+                Note = "Thu tiền mặt tại quầy (Walk-in)"
+            };
+
+            var result = await _invoiceService.RecordPaymentAsync(paymentModel, receptionistId);
+            if (!result.Succeeded)
+            {
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction(nameof(WalkInPayment), new { bookingId = bookingId, method = "Cash" });
+            }
+
+            return RedirectToAction(nameof(PrintInvoice), new { invoiceId = booking.InvoiceId.Value });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PrintInvoice(long invoiceId)
+        {
+            var invoice = await _invoiceService.GetInvoiceDetailAsync(invoiceId);
+            if (invoice == null) 
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy hóa đơn.";
+                return RedirectToAction(nameof(Invoices));
+            }
+            
+            return View(invoice);
         }
 
         [HttpGet]
@@ -124,9 +235,11 @@ namespace HotelManagement.Controllers
             return View(model);
         }
 
-        public IActionResult Rooms()
+        [HttpGet]
+        public async Task<IActionResult> RoomStatus(DateTime? date)
         {
-            return View("Placeholder", "Theo dõi phòng");
+            var model = await _operationService.GetRoomStatusBoardAsync(date);
+            return View(model);
         }
 
         [HttpGet]
@@ -226,6 +339,13 @@ namespace HotelManagement.Controllers
             }
 
             TempData["SuccessMessage"] = result.Message;
+
+            var bookingDetail = await _bookingService.GetBookingDetailAsync(id);
+            if (bookingDetail?.InvoiceId != null && bookingDetail.InvoiceRemainingAmount > 0)
+            {
+                TempData["WarningMessage"] = "Khách hàng có khoản nợ phát sinh cần thanh toán!";
+                return RedirectToAction(nameof(RecordPayment), new { invoiceId = bookingDetail.InvoiceId.Value });
+            }
 
             return RedirectToAction(nameof(BookingDetails), new { id });
         }
@@ -349,7 +469,18 @@ namespace HotelManagement.Controllers
 
             TempData["SuccessMessage"] = result.Message;
 
-            return RedirectToAction(nameof(InvoiceDetails), new { id = model.InvoiceId });
+            // Redirect to PrintInvoice if payment recorded successfully
+            return RedirectToAction(nameof(PrintInvoice), new { invoiceId = model.InvoiceId });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> InvoicePaymentQrTab(long invoiceId, decimal amount)
+        {
+            var invoice = await _invoiceService.GetInvoiceDetailAsync(invoiceId);
+            if (invoice == null) return NotFound();
+            
+            ViewBag.AmountToPay = amount;
+            return View(invoice);
         }
 
         private bool TryGetCurrentUserId(out long userId)

@@ -28,6 +28,16 @@ builder.Services.AddDbContext<HotelDbContext>(options =>
     options.UseSqlServer(connectionString);
 });
 
+builder.Services.Configure<HotelManagement.Configuration.EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
+builder.Services.Configure<HotelManagement.Configuration.SepaySettings>(
+    builder.Configuration.GetSection("SepaySettings"));
+
+builder.Services.AddScoped<HotelManagement.Services.Email.EmailService>();
+builder.Services.AddScoped<HotelManagement.Services.Payments.PaymentService>();
+builder.Services.AddScoped<HotelManagement.Services.Cancellation.CancellationService>();
+builder.Services.AddHostedService<HotelManagement.Services.Background.BookingExpirationBackgroundService>();
+
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<AdminDashboardService>();
 builder.Services.AddScoped<RoomTypeManagementService>();
@@ -46,6 +56,7 @@ builder.Services.AddScoped<CustomerProfileService>();
 builder.Services.AddScoped<ReceptionistDashboardService>();
 builder.Services.AddScoped<ReceptionistBookingService>();
 builder.Services.AddScoped<ReceptionistInvoiceService>();
+builder.Services.AddScoped<ReceptionistOperationService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

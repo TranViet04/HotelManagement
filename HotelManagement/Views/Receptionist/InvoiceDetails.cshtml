@@ -316,7 +316,7 @@
                                         </td>
                                         <td><strong>@payment.Amount.ToString("N0") VND</strong></td>
                                         <td>@payment.Status</td>
-                                        <td>@payment.PaidAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>@(payment.PaidAt?.ToString("dd/MM/yyyy HH:mm") ?? "-")</td>
                                     </tr>
                                 }
                             </tbody>

@@ -316,6 +316,9 @@ namespace HotelManagement.Services.Receptionist
                 .Include(i => i.Booking)
                     .ThenInclude(b => b!.Room)
                         .ThenInclude(r => r!.RoomType)
+                .Include(i => i.Booking)
+                    .ThenInclude(b => b!.BookingServices)
+                        .ThenInclude(bs => bs.Service)
                 .FirstOrDefaultAsync(i => i.Id == invoiceId);
 
             if (invoice == null || invoice.Booking == null)
@@ -343,6 +346,21 @@ namespace HotelManagement.Services.Receptionist
                 CanRecordPayment = paymentAvailability.CanRecordPayment,
                 RecordPaymentBlockReason = paymentAvailability.Reason,
                 PaymentMethodOptions = GetPaymentMethodOptions(),
+                UnpaidServices = invoice.Booking.BookingServices
+                    .OrderBy(bs => bs.UsedAt)
+                    .Select(bs => new ReceptionistBookingServiceItemViewModel
+                    {
+                        BookingServiceId = bs.Id,
+                        ServiceName = bs.Service?.Name ?? "Dịch vụ",
+                        Category = bs.Service?.Category,
+                        Unit = bs.Service?.Unit,
+                        Quantity = bs.Quantity,
+                        UnitPrice = bs.UnitPrice,
+                        TotalPrice = bs.TotalPrice,
+                        UsedAt = bs.UsedAt,
+                        Note = bs.Note
+                    })
+                    .ToList(),
                 ExistingPayments = invoice.Payments
                     .OrderByDescending(p => p.PaidAt)
                     .Select(p => new ReceptionistInvoicePaymentLineViewModel

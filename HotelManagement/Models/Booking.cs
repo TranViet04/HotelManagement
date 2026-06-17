@@ -52,6 +52,8 @@ namespace HotelManagement.Models
 
         public DateTime? UpdatedAt { get; set; }
 
+        public decimal RefundAmount { get; set; } = 0;
+
         public User? Customer { get; set; }
 
         public User? CreatedByUser { get; set; }

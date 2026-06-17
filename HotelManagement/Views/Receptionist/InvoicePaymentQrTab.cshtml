@@ -1,0 +1,119 @@
+@model HotelManagement.ViewModels.Receptionist.ReceptionistInvoiceDetailViewModel
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+
+@{
+    Layout = null; // No layout for this clean tab
+    var sepaySettings = Configuration.GetSection("SepaySettings");
+    var bankId = sepaySettings["BankId"] ?? "Sacombank";
+    var bankAccount = sepaySettings["BankAccount"] ?? "070131554050";
+    var accountName = sepaySettings["AccountName"] ?? "TRAN THI NGA";
+    var template = sepaySettings["Template"] ?? "compact";
+    
+    decimal amountToPay = ViewBag.AmountToPay != null ? (decimal)ViewBag.AmountToPay : Model.RemainingAmount;
+    var totalAmount = (int)amountToPay;
+    
+    // Sepay dynamically generates VietQR
+    var qrUrl = $"https://qr.sepay.vn/img?acc={bankAccount}&bank={bankId}&amount={totalAmount}&des={Model.InvoiceCode}&template={template}&accName={accountName}";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Thanh toán Hóa đơn - @Model.InvoiceCode</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body {
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .qr-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        .qr-image {
+            width: 100%;
+            max-width: 350px;
+            height: auto;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .success-overlay {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .success-overlay.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="qr-card" id="qr-container">
+        <h2 class="fw-bold mb-1 text-primary">Thanh toán Hóa đơn</h2>
+        <p class="text-muted mb-4">Quý khách vui lòng quét mã QR bên dưới bằng ứng dụng ngân hàng</p>
+
+        <img src="@qrUrl" alt="Mã QR thanh toán" class="qr-image" />
+
+        <div class="mt-3">
+            <h3 class="fw-bold text-danger">@totalAmount.ToString("N0") VND</h3>
+            <p class="mb-0 text-muted">Nội dung: <strong>@Model.InvoiceCode</strong></p>
+        </div>
+        
+        <div class="mt-4 pt-4 border-top">
+            <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+            <span class="text-muted">Hệ thống đang tự động kiểm tra giao dịch...</span>
+        </div>
+    </div>
+
+    <div class="qr-card success-overlay" id="success-container">
+        <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="currentColor" class="bi bi-check-circle-fill text-success mb-4" viewBox="0 0 16 16">
+            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+        </svg>
+        <h2 class="fw-bold text-success mb-2">Thanh toán thành công!</h2>
+        <p class="text-muted">Giao dịch đã được ghi nhận. Cảm ơn quý khách!</p>
+        <p class="small text-muted mt-4">Vui lòng nhận lại hóa đơn từ nhân viên lễ tân.</p>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const checkPaymentStatus = async () => {
+                try {
+                    const response = await fetch('/Payment/Status?invoiceCode=@Model.InvoiceCode');
+                    if (response.ok) {
+                        const result = await response.json();
+                        // If it's Paid or remainingAmount is 0, it means the debt is cleared
+                        if (result.status === 'Paid' || result.remainingAmount === 0) {
+                            document.getElementById('qr-container').style.display = 'none';
+                            document.getElementById('success-container').classList.add('active');
+                            return; // Stop polling
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking payment status:', error);
+                }
+                setTimeout(checkPaymentStatus, 3000); // Check again after 3 seconds
+            };
+
+            // Start polling
+            setTimeout(checkPaymentStatus, 3000);
+        });
+    </script>
+</body>
+</html>

@@ -48,5 +48,9 @@ namespace HotelManagement.ViewModels.Receptionist
         public decimal TotalAmount { get; set; }
 
         public DateTime CreatedAt { get; set; }
+
+        public string? InvoiceStatus { get; set; }
+
+        public decimal PaidAmount { get; set; }
     }
 }

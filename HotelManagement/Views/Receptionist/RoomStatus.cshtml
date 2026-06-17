@@ -1,0 +1,102 @@
+@model HotelManagement.ViewModels.Receptionist.RoomStatusBoardViewModel
+
+@{
+    ViewData["Title"] = "Tình trạng phòng";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Tình trạng phòng</h2>
+        <p class="text-muted mb-0">Sơ đồ và trạng thái các phòng trong khách sạn</p>
+    </div>
+    <div>
+        <form method="get" asp-action="RoomStatus" class="d-flex align-items-center gap-2">
+            <label for="date" class="form-label mb-0 fw-semibold">Ngày:</label>
+            <input type="date" id="date" name="date" class="form-control" value="@Model.TargetDate.ToString("yyyy-MM-dd")" onchange="this.form.submit()" />
+        </form>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="d-flex gap-4 p-3 bg-white rounded shadow-sm border">
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-success" style="width: 16px; height: 16px;"></div>
+                <span class="fw-semibold text-muted">Trống</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-primary" style="width: 16px; height: 16px;"></div>
+                <span class="fw-semibold text-muted">Đang ở</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-warning" style="width: 16px; height: 16px;"></div>
+                <span class="fw-semibold text-muted">Đã đặt (Sắp đến)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!Model.Floors.Any())
+{
+    <div class="alert alert-info">Chưa có dữ liệu phòng.</div>
+}
+else
+{
+    <div class="d-flex flex-column gap-4">
+        @foreach (var floor in Model.Floors)
+        {
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-light border-bottom">
+                    <h5 class="mb-0 fw-bold">Tầng @floor.Floor</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4">
+                        @foreach (var room in floor.Rooms)
+                        {
+                            <div class="col">
+                                <div class="card h-100 border-0 shadow-sm @room.StatusColorClass">
+                                    <div class="card-body d-flex flex-column text-center position-relative">
+                                        <h3 class="fw-bold mb-1">@room.RoomNumber</h3>
+                                        <span class="badge bg-white text-dark mb-3 opacity-75">@room.RoomTypeName</span>
+                                        
+                                        <div class="mt-auto">
+                                            @if (room.BookingId.HasValue)
+                                            {
+                                                <div class="small fw-semibold mb-1" style="word-break: break-word;">@room.CustomerName</div>
+                                                <div class="small opacity-75">
+                                                    @room.CheckInDate?.ToString("dd/MM") - @room.CheckOutDate?.ToString("dd/MM")
+                                                </div>
+                                                <a href="@Url.Action("BookingDetails", "Receptionist", new { id = room.BookingId })" class="stretched-link"></a>
+                                            }
+                                            else
+                                            {
+                                                <div class="small fw-semibold mt-4">@room.Status</div>
+                                                <a href="@Url.Action("CreateWalkInBooking", "Receptionist")" class="stretched-link"></a>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .card.bg-success {
+        background: linear-gradient(135deg, #20c997 0%, #198754 100%) !important;
+    }
+    .card.bg-primary {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important;
+    }
+    .card.bg-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #ffca2c 100%) !important;
+    }
+    .card.bg-success:hover, .card.bg-primary:hover, .card.bg-warning:hover {
+        transform: translateY(-5px);
+        transition: transform 0.2s ease-in-out;
+    }
+</style>
