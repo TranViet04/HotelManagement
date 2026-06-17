@@ -20,11 +20,7 @@
             </p>
 
             <div class="d-flex flex-wrap gap-2">
-                <a asp-controller="Rooms" asp-action="Search" class="btn btn-primary btn-lg">
-                    Tìm phòng ngay
-                </a>
-
-                <a asp-controller="Rooms" asp-action="Index" class="btn btn-outline-primary btn-lg">
+                <a asp-controller="Rooms" asp-action="Index" class="btn btn-primary btn-lg">
                     Xem danh sách phòng
                 </a>
             </div>
@@ -34,7 +30,7 @@
             <div class="booking-search-card bg-light p-4">
                 <h5 class="fw-bold mb-3">Tìm phòng nhanh</h5>
 
-                <form asp-controller="Rooms" asp-action="Search" method="get">
+                <form asp-controller="Rooms" asp-action="Index" method="get">
                     <div class="mb-3">
                         <label class="form-label">Ngày nhận phòng</label>
                         <input type="date"
@@ -79,6 +75,8 @@
         </div>
     </div>
 </section>
+
+@await Component.InvokeAsync("RoomTypeCarousel")
 
 <section class="mb-4">
     <div class="d-flex justify-content-between align-items-center mb-3">

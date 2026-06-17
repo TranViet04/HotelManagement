@@ -16,6 +16,8 @@ namespace HotelManagement.ViewModels.Customer
 
         public string? ThumbnailUrl { get; set; }
 
+        public List<string> ImageUrls { get; set; } = new();
+
         public int TotalRoomCount { get; set; }
 
         public int AvailableRoomCount { get; set; }

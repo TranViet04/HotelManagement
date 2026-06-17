@@ -40,10 +40,9 @@ namespace HotelManagement.ViewModels.Admin
         [MaxLength(100)]
         public string? BedType { get; set; }
 
-        [MaxLength(500)]
-        public string? ThumbnailUrl { get; set; }
-
         [Required]
         public string Status { get; set; } = "Active";
+
+        public List<string> ExistingImageUrls { get; set; } = new();
     }
 }

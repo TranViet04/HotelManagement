@@ -12,11 +12,11 @@
             </div>
 
             <h1 class="fw-bold mb-3">
-                Kiểm tra phòng còn trống theo thời gian lưu trú
+                Kiểm tra loại phòng còn trống theo thời gian lưu trú
             </h1>
 
             <p class="text-muted mb-0">
-                Chọn ngày nhận phòng, ngày trả phòng và số lượng khách để xem các phòng phù hợp.
+                Chọn ngày nhận phòng, ngày trả phòng và số lượng khách để xem các loại phòng phù hợp.
             </p>
         </div>
 
@@ -30,7 +30,7 @@
 
 <section class="card border-0 shadow-sm mb-4">
     <div class="card-body p-4">
-        <form asp-controller="Rooms" asp-action="Search" method="get" class="row g-3">
+        <form asp-controller="Rooms" asp-action="Index" method="get" class="row g-3">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="col-md-3">
@@ -91,7 +91,7 @@ else if (!ViewData.ModelState.IsValid)
 else if (Model.Results == null || !Model.Results.Any())
 {
     <div class="alert alert-warning">
-        Không tìm thấy phòng phù hợp trong khoảng thời gian đã chọn.
+        Không tìm thấy loại phòng phù hợp trong khoảng thời gian đã chọn.
     </div>
 }
 else
@@ -100,7 +100,7 @@ else
         <div>
             <h2 class="h4 fw-bold mb-1">Kết quả tìm kiếm</h2>
             <p class="text-muted mb-0">
-                Tìm thấy @Model.Results.Count phòng phù hợp từ
+                Tìm thấy @Model.Results.Count loại phòng phù hợp từ
                 <strong>@Model.CheckInDate.ToString("dd/MM/yyyy")</strong>
                 đến
                 <strong>@Model.CheckOutDate.ToString("dd/MM/yyyy")</strong>.
@@ -109,20 +109,20 @@ else
     </div>
 
     <div class="row g-4">
-        @foreach (var room in Model.Results)
+        @foreach (var roomType in Model.Results)
         {
             <div class="col-md-6 col-xl-4">
                 <div class="card room-card search-room-card h-100 border-0 shadow-sm">
-                    @if (!string.IsNullOrWhiteSpace(room.ThumbnailUrl))
+                    @if (!string.IsNullOrWhiteSpace(roomType.ThumbnailUrl))
                     {
-                        <img src="@room.ThumbnailUrl"
+                        <img src="@roomType.ThumbnailUrl"
                              class="card-img-top room-card-img"
-                             alt="@room.RoomTypeName" />
+                             alt="@roomType.Name" />
                     }
                     else
                     {
                         <div class="room-card-img room-card-placeholder d-flex align-items-center justify-content-center">
-                            <span>@room.RoomTypeName</span>
+                            <span>@roomType.Name</span>
                         </div>
                     }
 
@@ -130,27 +130,23 @@ else
                         <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
                             <div>
                                 <h5 class="card-title fw-bold mb-1">
-                                    @room.RoomTypeName
+                                    @roomType.Name
                                 </h5>
 
                                 <div class="text-muted small">
-                                    Phòng @room.RoomNumber
-                                    @if (room.Floor.HasValue)
-                                    {
-                                        <span> - Tầng @room.Floor</span>
-                                    }
+                                    @roomType.AvailableRoomCount phòng còn trống
                                 </div>
                             </div>
 
                             <span class="badge bg-success">
-                                Còn trống
+                                Còn phòng
                             </span>
                         </div>
 
                         <p class="card-text text-muted flex-grow-1">
-                            @if (!string.IsNullOrWhiteSpace(room.Description))
+                            @if (!string.IsNullOrWhiteSpace(roomType.Description))
                             {
-                                @room.Description
+                                @roomType.Description
                             }
                             else
                             {
@@ -161,17 +157,17 @@ else
                         <div class="room-info-list mb-3">
                             <div>
                                 <span class="text-muted">Sức chứa:</span>
-                                <strong>@room.Capacity khách</strong>
+                                <strong>@roomType.Capacity khách</strong>
                             </div>
 
                             <div>
                                 <span class="text-muted">Loại giường:</span>
-                                <strong>@(room.BedType ?? "Đang cập nhật")</strong>
+                                <strong>@(roomType.BedType ?? "Đang cập nhật")</strong>
                             </div>
 
                             <div>
                                 <span class="text-muted">Số đêm:</span>
-                                <strong>@room.Nights</strong>
+                                <strong>@roomType.Nights</strong>
                             </div>
                         </div>
 
@@ -179,39 +175,28 @@ else
                             <div>
                                 <span class="text-muted">Giá mỗi đêm:</span>
                                 <strong class="text-primary">
-                                    @room.PricePerNight.ToString("N0") VND
+                                    @roomType.PricePerNight.ToString("N0") VND
                                 </strong>
                             </div>
 
                             <div>
                                 <span class="text-muted">Tạm tính:</span>
                                 <strong class="text-primary fs-5">
-                                    @room.TotalRoomAmount.ToString("N0") VND
+                                    @roomType.TotalRoomAmount.ToString("N0") VND
                                 </strong>
                             </div>
                         </div>
 
-                        <div class="d-grid gap-2">
+                        <div class="d-grid">
                             <a asp-controller="Rooms"
                                asp-action="Details"
-                               asp-route-id="@room.RoomTypeId"
-                               asp-route-checkInDate="@Model.CheckInDate.ToString("yyyy-MM-dd")"
-                               asp-route-checkOutDate="@Model.CheckOutDate.ToString("yyyy-MM-dd")"
-                               asp-route-adults="@Model.Adults"
-                               asp-route-children="@Model.Children"
-                               class="btn btn-outline-primary">
-                                Xem chi tiết
-                            </a>
-
-                            <a asp-controller="Bookings"
-                               asp-action="Create"
-                               asp-route-roomId="@room.RoomId"
+                               asp-route-id="@roomType.RoomTypeId"
                                asp-route-checkInDate="@Model.CheckInDate.ToString("yyyy-MM-dd")"
                                asp-route-checkOutDate="@Model.CheckOutDate.ToString("yyyy-MM-dd")"
                                asp-route-adults="@Model.Adults"
                                asp-route-children="@Model.Children"
                                class="btn btn-primary">
-                                Đặt phòng
+                                Xem phòng trống
                             </a>
                         </div>
                     </div>

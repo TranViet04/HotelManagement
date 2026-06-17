@@ -1,0 +1,334 @@
+@model List<HotelManagement.ViewModels.Public.RoomTypeCarouselItemViewModel>
+
+@if (Model == null || !Model.Any())
+{
+    <section class="room-type-carousel-empty my-4">
+        <div class="alert alert-info mb-0">
+            Hiện chưa có loại phòng nào để hiển thị.
+        </div>
+    </section>
+}
+else
+{
+    <section class="room-type-carousel mb-4" id="roomTypeCarousel">
+        <div class="room-type-carousel-inner">
+            @for (var i = 0; i < Model.Count; i++)
+            {
+                var item = Model[i];
+
+                <article class="room-type-slide @(i == 0 ? "active" : "")"
+                         style="background-image: linear-gradient(90deg, rgba(10, 17, 31, 0.82), rgba(10, 17, 31, 0.34)), url('@item.ImageUrl');">
+                    <div class="room-type-content">
+                        <div class="room-type-eyebrow">Loại phòng</div>
+
+                        <h2>@item.Name</h2>
+
+                        <div class="room-type-meta">
+                            <span>@item.Capacity khách</span>
+                            <span>@(string.IsNullOrWhiteSpace(item.BedType) ? "Đang cập nhật" : item.BedType)</span>
+                            <span>@item.Price.ToString("N0") VND / đêm</span>
+                        </div>
+
+                        <p>
+                            @(string.IsNullOrWhiteSpace(item.Description)
+                                ? "Không gian lưu trú tiện nghi, phù hợp cho kỳ nghỉ hoặc chuyến công tác của bạn."
+                                : item.Description)
+                        </p>
+
+                        <div class="room-type-actions">
+                            <a href="/Rooms/Details/@item.Id" class="btn-room-outline">
+                                Xem chi tiết
+                            </a>
+
+                            <a href="/Rooms" class="btn-room-primary">
+                                Xem danh sách phòng
+                            </a>
+                        </div>
+
+                        <div class="room-type-available">
+                            Còn @item.AvailableRoomCount phòng trống
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+
+        @if (Model.Count > 1)
+        {
+            <button type="button" class="room-type-nav prev" aria-label="Loại phòng trước">
+                ‹
+            </button>
+
+            <button type="button" class="room-type-nav next" aria-label="Loại phòng tiếp theo">
+                ›
+            </button>
+
+            <div class="room-type-dots" aria-label="Chọn loại phòng">
+                @for (var i = 0; i < Model.Count; i++)
+                {
+                    <button type="button"
+                            class="room-type-dot @(i == 0 ? "active" : "")"
+                            data-index="@i"
+                            aria-label="Chuyển đến loại phòng @(i + 1)">
+                    </button>
+                }
+            </div>
+        }
+    </section>
+}
+
+<style>
+    .room-type-carousel {
+        position: relative;
+        width: 100%;
+        min-height: 520px;
+        overflow: hidden;
+        border-radius: 8px;
+        background-color: #111827;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    }
+
+    .room-type-carousel-inner {
+        position: relative;
+        width: 100%;
+        min-height: 520px;
+    }
+
+    .room-type-slide {
+        position: absolute;
+        inset: 0;
+        display: none;
+        min-height: 520px;
+        color: #ffffff;
+        background-position: center;
+        background-size: cover;
+    }
+
+    .room-type-slide.active {
+        display: flex;
+        align-items: center;
+    }
+
+    .room-type-content {
+        width: min(680px, calc(100% - 120px));
+        margin-left: 72px;
+        padding: 40px 0;
+    }
+
+    .room-type-eyebrow {
+        margin-bottom: 10px;
+        color: #f3d27a;
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .room-type-content h2 {
+        margin-bottom: 18px;
+        font-size: 48px;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .room-type-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 22px;
+    }
+
+    .room-type-meta span {
+        padding: 8px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 999px;
+        background-color: rgba(255, 255, 255, 0.12);
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .room-type-content p {
+        max-width: 620px;
+        margin-bottom: 26px;
+        font-size: 17px;
+        line-height: 1.7;
+    }
+
+    .room-type-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .btn-room-outline,
+    .btn-room-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 10px 22px;
+        border-radius: 6px;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .btn-room-outline {
+        border: 1px solid #ffffff;
+        color: #ffffff;
+    }
+
+    .btn-room-outline:hover {
+        background-color: #ffffff;
+        color: #111827;
+    }
+
+    .btn-room-primary {
+        border: 1px solid #f3d27a;
+        background-color: #f3d27a;
+        color: #111827;
+    }
+
+    .btn-room-primary:hover {
+        border-color: #ffffff;
+        background-color: #ffffff;
+        color: #111827;
+    }
+
+    .room-type-available {
+        color: #f3d27a;
+        font-weight: 700;
+    }
+
+    .room-type-nav {
+        position: absolute;
+        top: 50%;
+        z-index: 5;
+        width: 52px;
+        height: 52px;
+        border: 1px solid rgba(255, 255, 255, 0.54);
+        border-radius: 50%;
+        color: #ffffff;
+        background-color: rgba(15, 23, 42, 0.66);
+        font-size: 36px;
+        line-height: 1;
+        transform: translateY(-50%);
+    }
+
+    .room-type-nav.prev {
+        left: 20px;
+    }
+
+    .room-type-nav.next {
+        right: 20px;
+    }
+
+    .room-type-nav:hover {
+        border-color: #f3d27a;
+        background-color: #f3d27a;
+        color: #111827;
+    }
+
+    .room-type-dots {
+        position: absolute;
+        right: 28px;
+        bottom: 24px;
+        z-index: 6;
+        display: flex;
+        gap: 8px;
+    }
+
+    .room-type-dot {
+        width: 11px;
+        height: 11px;
+        border: 0;
+        border-radius: 50%;
+        padding: 0;
+        background-color: rgba(255, 255, 255, 0.54);
+    }
+
+    .room-type-dot.active {
+        background-color: #f3d27a;
+    }
+
+    @@media (max-width: 768px) {
+        .room-type-carousel,
+        .room-type-carousel-inner,
+        .room-type-slide {
+            min-height: 480px;
+        }
+
+        .room-type-content {
+            width: calc(100% - 56px);
+            margin-left: 28px;
+            padding: 78px 0 56px;
+        }
+
+        .room-type-content h2 {
+            font-size: 34px;
+        }
+
+        .room-type-content p {
+            font-size: 15px;
+        }
+
+        .room-type-nav {
+            top: auto;
+            bottom: 18px;
+            width: 42px;
+            height: 42px;
+            font-size: 30px;
+            transform: none;
+        }
+
+        .room-type-nav.prev {
+            left: 22px;
+        }
+
+        .room-type-nav.next {
+            left: 72px;
+            right: auto;
+        }
+    }
+</style>
+
+<script>
+    (() => {
+        const root = document.getElementById('roomTypeCarousel');
+
+        if (!root) {
+            return;
+        }
+
+        const slides = Array.from(root.querySelectorAll('.room-type-slide'));
+        const dots = Array.from(root.querySelectorAll('.room-type-dot'));
+        const prevButton = root.querySelector('.room-type-nav.prev');
+        const nextButton = root.querySelector('.room-type-nav.next');
+
+        if (!slides.length) {
+            return;
+        }
+
+        let currentIndex = 0;
+
+        const showSlide = (index) => {
+            currentIndex = (index + slides.length) % slides.length;
+
+            slides.forEach((slide, slideIndex) => {
+                slide.classList.toggle('active', slideIndex === currentIndex);
+            });
+
+            dots.forEach((dot, dotIndex) => {
+                dot.classList.toggle('active', dotIndex === currentIndex);
+            });
+        };
+
+        prevButton?.addEventListener('click', () => showSlide(currentIndex - 1));
+        nextButton?.addEventListener('click', () => showSlide(currentIndex + 1));
+
+        dots.forEach((dot) => {
+            dot.addEventListener('click', () => {
+                showSlide(Number.parseInt(dot.dataset.index, 10));
+            });
+        });
+    })();
+</script>

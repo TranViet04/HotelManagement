@@ -35,6 +35,9 @@ appsettings.*.Local.json
 ## Uploaded room images
 HotelManagement/wwwroot/images/rooms/*
 !HotelManagement/wwwroot/images/rooms/.gitkeep
+!HotelManagement/wwwroot/images/rooms/default-room.jpg
+HotelManagement/wwwroot/images/room-types/*
+!HotelManagement/wwwroot/images/room-types/.gitkeep
 
 ## Uploaded chat images
 HotelManagement/wwwroot/uploads/

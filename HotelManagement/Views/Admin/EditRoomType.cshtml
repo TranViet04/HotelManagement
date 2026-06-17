@@ -8,7 +8,7 @@
 
 <div class="card form-card">
     <div class="card-body">
-        <form asp-controller="Admin" asp-action="EditRoomType" method="post">
+        <form asp-controller="Admin" asp-action="EditRoomType" method="post" enctype="multipart/form-data">
             @Html.AntiForgeryToken()
 
             <input asp-for="Id" type="hidden" />
@@ -19,6 +19,34 @@
                 <label asp-for="Name" class="form-label">Tên loại phòng</label>
                 <input asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+
+            @if (Model.ExistingImageUrls.Any())
+            {
+                <div class="mb-3">
+                    <label class="form-label">Ảnh hiện có</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var imageUrl in Model.ExistingImageUrls)
+                        {
+                            <img src="@imageUrl"
+                                 alt="@Model.Name"
+                                 style="width: 120px; height: 80px; object-fit: cover; border-radius: 8px;" />
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="mb-3">
+                <label for="images" class="form-label">Thêm hình ảnh loại phòng</label>
+                <input type="file"
+                       id="images"
+                       name="images"
+                       class="form-control"
+                       accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                       multiple />
+                <div class="form-text">
+                    Có thể chọn nhiều ảnh. Ảnh mới sẽ được thêm vào bộ ảnh hiện có.
+                </div>
             </div>
 
             <div class="mb-3">
@@ -45,12 +73,6 @@
                     <input asp-for="BedType" class="form-control" />
                     <span asp-validation-for="BedType" class="text-danger"></span>
                 </div>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="ThumbnailUrl" class="form-label">Ảnh đại diện</label>
-                <input asp-for="ThumbnailUrl" class="form-control" />
-                <span asp-validation-for="ThumbnailUrl" class="text-danger"></span>
             </div>
 
             <div class="mb-3">

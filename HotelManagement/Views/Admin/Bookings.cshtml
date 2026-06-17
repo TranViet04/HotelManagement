@@ -6,6 +6,20 @@
 
 <h2 class="mb-4">Theo dõi đặt phòng</h2>
 
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
 <form method="get" class="row mb-3">
     <div class="col-md-4">
         <input type="text"
@@ -138,6 +152,22 @@ else
                                class="btn btn-sm btn-outline-primary">
                                 Chi tiết
                             </a>
+
+                            @if (item.Status == "Pending" || item.Status == "Confirmed")
+                            {
+                                <form asp-controller="Admin"
+                                      asp-action="DeleteBooking"
+                                      asp-route-id="@item.Id"
+                                      method="post"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Bạn có chắc muốn hủy đặt phòng này không?');">
+                                    @Html.AntiForgeryToken()
+
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        Xóa
+                                    </button>
+                                </form>
+                            }
                         </td>
                     </tr>
                 }

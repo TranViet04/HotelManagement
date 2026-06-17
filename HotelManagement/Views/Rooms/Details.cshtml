@@ -7,11 +7,51 @@
 <section class="room-detail-hero shadow-sm p-4 p-lg-5 mb-4">
     <div class="row g-4 align-items-center">
         <div class="col-lg-6">
-            @if (!string.IsNullOrWhiteSpace(Model.ThumbnailUrl))
+            @if (Model.ImageUrls.Any())
             {
-                <img src="@Model.ThumbnailUrl"
-                     class="room-detail-img"
-                     alt="@Model.Name" />
+                <div class="room-detail-gallery" data-room-gallery>
+                    <img src="@Model.ImageUrls.First()"
+                         class="room-detail-img"
+                         alt="@Model.Name"
+                         data-room-gallery-image />
+
+                    @if (Model.ImageUrls.Count > 1)
+                    {
+                        <button type="button"
+                                class="room-gallery-arrow room-gallery-arrow-prev"
+                                aria-label="Ảnh trước"
+                                data-room-gallery-prev>
+                            ‹
+                        </button>
+
+                        <button type="button"
+                                class="room-gallery-arrow room-gallery-arrow-next"
+                                aria-label="Ảnh sau"
+                                data-room-gallery-next>
+                            ›
+                        </button>
+
+                        <div class="room-gallery-counter" data-room-gallery-counter>
+                            1 / @Model.ImageUrls.Count
+                        </div>
+                    }
+                </div>
+
+                @if (Model.ImageUrls.Count > 1)
+                {
+                    <div class="room-gallery-thumbs mt-2" data-room-gallery-thumbs>
+                        @for (var i = 0; i < Model.ImageUrls.Count; i++)
+                        {
+                            <button type="button"
+                                    class="room-gallery-thumb @(i == 0 ? "active" : "")"
+                                    data-room-gallery-thumb="@i"
+                                    data-image-url="@Model.ImageUrls[i]"
+                                    aria-label="Xem ảnh @(i + 1)">
+                                <img src="@Model.ImageUrls[i]" alt="@Model.Name ảnh @(i + 1)" />
+                            </button>
+                        }
+                    </div>
+                }
             }
             else
             {
@@ -61,8 +101,14 @@
                 </div>
             </div>
 
-            <a asp-controller="Rooms" asp-action="Search" class="btn btn-outline-primary">
-                Quay lại tìm phòng
+            <a asp-controller="Rooms"
+               asp-action="Index"
+               asp-route-checkInDate="@(Model.CheckInDate?.ToString("yyyy-MM-dd"))"
+               asp-route-checkOutDate="@(Model.CheckOutDate?.ToString("yyyy-MM-dd"))"
+               asp-route-adults="@Model.Adults"
+               asp-route-children="@Model.Children"
+               class="btn btn-outline-primary">
+                Quay lại danh sách loại phòng
             </a>
         </div>
     </div>
@@ -239,4 +285,49 @@ else
             }
         </div>
     </section>
+}
+
+@section Scripts {
+    <script>
+        (() => {
+            const gallery = document.querySelector('[data-room-gallery]');
+
+            if (!gallery) {
+                return;
+            }
+
+            const image = gallery.querySelector('[data-room-gallery-image]');
+            const counter = gallery.querySelector('[data-room-gallery-counter]');
+            const prevButton = gallery.querySelector('[data-room-gallery-prev]');
+            const nextButton = gallery.querySelector('[data-room-gallery-next]');
+            const thumbs = Array.from(document.querySelectorAll('[data-room-gallery-thumb]'));
+            const imageUrls = thumbs.map(thumb => thumb.dataset.imageUrl);
+
+            if (!image || imageUrls.length <= 1) {
+                return;
+            }
+
+            let currentIndex = 0;
+
+            const showImage = (index) => {
+                currentIndex = (index + imageUrls.length) % imageUrls.length;
+                image.src = imageUrls[currentIndex];
+
+                if (counter) {
+                    counter.textContent = `${currentIndex + 1} / ${imageUrls.length}`;
+                }
+
+                thumbs.forEach((thumb, thumbIndex) => {
+                    thumb.classList.toggle('active', thumbIndex === currentIndex);
+                });
+            };
+
+            prevButton?.addEventListener('click', () => showImage(currentIndex - 1));
+            nextButton?.addEventListener('click', () => showImage(currentIndex + 1));
+
+            thumbs.forEach((thumb, index) => {
+                thumb.addEventListener('click', () => showImage(index));
+            });
+        })();
+    </script>
 }

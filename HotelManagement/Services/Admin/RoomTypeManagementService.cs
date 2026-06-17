@@ -49,7 +49,6 @@ namespace HotelManagement.Services.Admin
                 Price = roomType.Price,
                 Capacity = roomType.Capacity,
                 BedType = roomType.BedType,
-                ThumbnailUrl = roomType.ThumbnailUrl,
                 Status = roomType.Status
             };
         }
@@ -75,7 +74,6 @@ namespace HotelManagement.Services.Admin
                 Price = model.Price,
                 Capacity = model.Capacity,
                 BedType = model.BedType,
-                ThumbnailUrl = model.ThumbnailUrl,
                 Status = "Active",
                 CreatedAt = DateTime.Now
             };
@@ -100,12 +98,26 @@ namespace HotelManagement.Services.Admin
             roomType.Price = model.Price;
             roomType.Capacity = model.Capacity;
             roomType.BedType = model.BedType;
-            roomType.ThumbnailUrl = model.ThumbnailUrl;
             roomType.Status = model.Status;
             roomType.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task SetThumbnailUrlAsync(long id, string? thumbnailUrl)
+        {
+            var roomType = await _context.RoomTypes.FindAsync(id);
+
+            if (roomType == null)
+            {
+                return;
+            }
+
+            roomType.ThumbnailUrl = thumbnailUrl;
+            roomType.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
         }
 
         public async Task<bool> DeactivateAsync(long id)
