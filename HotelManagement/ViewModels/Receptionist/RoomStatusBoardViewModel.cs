@@ -20,6 +20,7 @@ namespace HotelManagement.ViewModels.Receptionist
         public long RoomId { get; set; }
         public string RoomNumber { get; set; } = string.Empty;
         public string RoomTypeName { get; set; } = string.Empty;
+        public string RoomStatus { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty; // Trống, Đang ở, Đã đặt
         public string StatusColorClass { get; set; } = string.Empty;
         

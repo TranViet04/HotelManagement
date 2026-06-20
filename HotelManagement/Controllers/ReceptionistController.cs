@@ -242,6 +242,22 @@ namespace HotelManagement.Controllers
             return View(model);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateRoomStatus(long roomId, string status, DateTime? date)
+        {
+            if (!TryGetCurrentUserId(out var receptionistId))
+            {
+                return Challenge();
+            }
+
+            var result = await _operationService.UpdateRoomStatusAsync(roomId, status, receptionistId);
+
+            TempData[result.Succeeded ? "SuccessMessage" : "ErrorMessage"] = result.Message;
+
+            return RedirectToAction(nameof(RoomStatus), new { date });
+        }
+
         [HttpGet]
         public async Task<IActionResult> BookingServices()
         {

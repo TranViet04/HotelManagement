@@ -4,6 +4,22 @@
     ViewData["Title"] = "Tình trạng phòng";
 }
 
+@* Alert messages *@
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="fw-bold mb-1">Tình trạng phòng</h2>
@@ -17,9 +33,10 @@
     </div>
 </div>
 
+@* Legend *@
 <div class="row g-4 mb-4">
     <div class="col-12">
-        <div class="d-flex gap-4 p-3 bg-white rounded shadow-sm border">
+        <div class="d-flex flex-wrap gap-3 p-3 bg-white rounded shadow-sm border">
             <div class="d-flex align-items-center gap-2">
                 <div class="rounded-circle bg-success" style="width: 16px; height: 16px;"></div>
                 <span class="fw-semibold text-muted">Trống</span>
@@ -31,6 +48,14 @@
             <div class="d-flex align-items-center gap-2">
                 <div class="rounded-circle bg-warning" style="width: 16px; height: 16px;"></div>
                 <span class="fw-semibold text-muted">Đã đặt (Sắp đến)</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-info" style="width: 16px; height: 16px;"></div>
+                <span class="fw-semibold text-muted">Đang dọn</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-danger" style="width: 16px; height: 16px;"></div>
+                <span class="fw-semibold text-muted">Bảo trì</span>
             </div>
         </div>
     </div>
@@ -54,11 +79,11 @@ else
                         @foreach (var room in floor.Rooms)
                         {
                             <div class="col">
-                                <div class="card h-100 border-0 shadow-sm @room.StatusColorClass">
-                                    <div class="card-body d-flex flex-column text-center position-relative">
+                                <div class="card h-100 border-0 shadow-sm room-card @room.StatusColorClass" style="min-height: 160px;">
+                                    <div class="card-body d-flex flex-column text-center position-relative p-3">
                                         <h3 class="fw-bold mb-1">@room.RoomNumber</h3>
-                                        <span class="badge bg-white text-dark mb-3 opacity-75">@room.RoomTypeName</span>
-                                        
+                                        <span class="badge bg-white text-dark mb-2 opacity-75">@room.RoomTypeName</span>
+
                                         <div class="mt-auto">
                                             @if (room.BookingId.HasValue)
                                             {
@@ -70,8 +95,21 @@ else
                                             }
                                             else
                                             {
-                                                <div class="small fw-semibold mt-4">@room.Status</div>
-                                                <a href="@Url.Action("CreateWalkInBooking", "Receptionist")" class="stretched-link"></a>
+                                                <div class="small fw-semibold mb-2">@room.Status</div>
+
+                                                @* Edit status button – only shown for rooms without active booking *@
+                                                <div class="position-relative" style="z-index: 2;">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-light btn-edit-status opacity-90 fw-semibold"
+                                                            data-room-id="@room.RoomId"
+                                                            data-room-number="@room.RoomNumber"
+                                                            data-current-status="@room.RoomStatus"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#editStatusModal"
+                                                            title="Chỉnh sửa trạng thái">
+                                                        <i class="bi bi-pencil-fill me-1"></i> Đổi trạng thái
+                                                    </button>
+                                                </div>
                                             }
                                         </div>
                                     </div>
@@ -85,6 +123,59 @@ else
     </div>
 }
 
+@* ── Edit Status Modal ── *@
+<div class="modal fade" id="editStatusModal" tabindex="-1" aria-labelledby="editStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="editStatusModalLabel">
+                    <i class="bi bi-door-closed me-2 text-primary"></i>
+                    Cập nhật trạng thái phòng
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                <p class="text-muted mb-3">
+                    Phòng: <strong id="modalRoomNumber" class="text-dark"></strong>
+                </p>
+
+                <form method="post" asp-action="UpdateRoomStatus" id="editStatusForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="roomId" id="modalRoomId" />
+                    <input type="hidden" name="date" value="@Model.TargetDate.ToString("yyyy-MM-dd")" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chọn trạng thái mới:</label>
+                        <div class="d-flex flex-column gap-2" id="statusOptions">
+                            <label class="status-option d-flex align-items-center gap-3 p-3 rounded border border-2" for="statusAvailable">
+                                <input type="radio" name="status" id="statusAvailable" value="Available" class="flex-shrink-0" style="width:18px;height:18px;cursor:pointer;" />
+                                <span class="badge rounded-pill bg-success px-3">Trống</span>
+                                <small class="text-muted">Phòng sẵn sàng đón khách</small>
+                            </label>
+                            <label class="status-option d-flex align-items-center gap-3 p-3 rounded border border-2" for="statusCleaning">
+                                <input type="radio" name="status" id="statusCleaning" value="Cleaning" class="flex-shrink-0" style="width:18px;height:18px;cursor:pointer;" />
+                                <span class="badge rounded-pill bg-info px-3">Đang dọn</span>
+                                <small class="text-muted">Phòng đang được vệ sinh</small>
+                            </label>
+                            <label class="status-option d-flex align-items-center gap-3 p-3 rounded border border-2" for="statusMaintenance">
+                                <input type="radio" name="status" id="statusMaintenance" value="Maintenance" class="flex-shrink-0" style="width:18px;height:18px;cursor:pointer;" />
+                                <span class="badge rounded-pill bg-danger px-3">Bảo trì</span>
+                                <small class="text-muted">Phòng tạm ngưng hoạt động</small>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Huỷ</button>
+                <button type="button" class="btn btn-primary px-4" id="confirmStatusBtn" disabled>
+                    <i class="bi bi-check-lg me-1"></i> Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .card.bg-success {
         background: linear-gradient(135deg, #20c997 0%, #198754 100%) !important;
@@ -95,8 +186,86 @@ else
     .card.bg-warning {
         background: linear-gradient(135deg, #ffc107 0%, #ffca2c 100%) !important;
     }
-    .card.bg-success:hover, .card.bg-primary:hover, .card.bg-warning:hover {
-        transform: translateY(-5px);
-        transition: transform 0.2s ease-in-out;
+    .card.bg-info {
+        background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%) !important;
+    }
+    .card.bg-danger {
+        background: linear-gradient(135deg, #f2566b 0%, #c0132b 100%) !important;
+    }
+    .room-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease;
+    }
+    .room-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+    }
+    .btn-edit-status {
+        font-size: 0.75rem;
+        border-radius: 20px;
+        padding: 4px 12px;
+        transition: background 0.15s, box-shadow 0.15s;
+    }
+    .btn-edit-status:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    }
+    .status-option {
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s;
+        border-color: #dee2e6 !important;
+        user-select: none;
+    }
+    .status-option:hover {
+        background: #f8f9fa;
+        border-color: #0d6efd !important;
+    }
+    .status-option:has(input:checked) {
+        background: #e8f0fe;
+        border-color: #0d6efd !important;
     }
 </style>
+
+@section Scripts {
+<script>
+    // Populate modal with room info when "Đổi trạng thái" is clicked
+    document.querySelectorAll('.btn-edit-status').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var roomId = this.dataset.roomId;
+            var roomNumber = this.dataset.roomNumber;
+            var currentStatus = this.dataset.currentStatus;
+
+            document.getElementById('modalRoomId').value = roomId;
+            document.getElementById('modalRoomNumber').textContent = roomNumber;
+
+            // Reset all radios
+            document.querySelectorAll('#statusOptions input[type="radio"]').forEach(function (r) {
+                r.checked = false;
+            });
+
+            // Pre-select current status
+            var currentRadio = document.querySelector('#statusOptions input[value="' + currentStatus + '"]');
+            if (currentRadio) {
+                currentRadio.checked = true;
+            }
+
+            updateConfirmBtn();
+        });
+    });
+
+    // Listen for radio change — update confirm button
+    document.querySelectorAll('#statusOptions input[type="radio"]').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            updateConfirmBtn();
+        });
+    });
+
+    function updateConfirmBtn() {
+        var anyChecked = document.querySelector('#statusOptions input[type="radio"]:checked');
+        document.getElementById('confirmStatusBtn').disabled = !anyChecked;
+    }
+
+    // Submit form on confirm
+    document.getElementById('confirmStatusBtn').addEventListener('click', function () {
+        document.getElementById('editStatusForm').submit();
+    });
+</script>
+}
