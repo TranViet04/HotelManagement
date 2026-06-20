@@ -169,6 +169,85 @@ namespace HotelManagement.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteRoomTypeImage(long roomTypeId, string? imageFileName)
+        {
+            var roomType = await _context.RoomTypes.FindAsync(roomTypeId);
+
+            if (roomType == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy loại phòng";
+                return RedirectToAction(nameof(RoomTypes));
+            }
+
+            if (string.IsNullOrWhiteSpace(imageFileName))
+            {
+                TempData["ErrorMessage"] = "Tên hình ảnh không hợp lệ";
+                return RedirectToAction(nameof(EditRoomType), new { id = roomTypeId });
+            }
+
+            var safeFileName = Path.GetFileName(imageFileName);
+            var hasDirectorySeparator = imageFileName.IndexOfAny(new[] { '/', '\\' }) >= 0;
+            var extension = Path.GetExtension(safeFileName).ToLowerInvariant();
+            var isAllowedImage = extension is ".jpg" or ".jpeg" or ".png" or ".webp";
+
+            if (hasDirectorySeparator
+                || safeFileName != imageFileName
+                || !isAllowedImage)
+            {
+                TempData["ErrorMessage"] = "Tên hình ảnh không hợp lệ";
+                return RedirectToAction(nameof(EditRoomType), new { id = roomTypeId });
+            }
+
+            var imageUrl = $"/images/room-types/{roomTypeId}/{safeFileName}";
+            var existingImageUrls = GetRoomTypeImageUrls(roomTypeId);
+
+            if (!existingImageUrls.Contains(imageUrl, StringComparer.OrdinalIgnoreCase))
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy hình ảnh";
+                return RedirectToAction(nameof(EditRoomType), new { id = roomTypeId });
+            }
+
+            var filePath = Path.Combine(
+                _environment.WebRootPath,
+                "images",
+                "room-types",
+                roomTypeId.ToString(),
+                safeFileName);
+
+            try
+            {
+                System.IO.File.Delete(filePath);
+            }
+            catch (IOException)
+            {
+                TempData["ErrorMessage"] = "Không thể xóa hình ảnh. Vui lòng thử lại";
+                return RedirectToAction(nameof(EditRoomType), new { id = roomTypeId });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                TempData["ErrorMessage"] = "Không có quyền xóa hình ảnh trên máy chủ";
+                return RedirectToAction(nameof(EditRoomType), new { id = roomTypeId });
+            }
+
+            if (string.Equals(roomType.ThumbnailUrl, imageUrl, StringComparison.OrdinalIgnoreCase))
+            {
+                roomType.ThumbnailUrl = GetRoomTypeImageUrls(roomTypeId).FirstOrDefault();
+                roomType.UpdatedAt = DateTime.Now;
+                await _context.SaveChangesAsync();
+            }
+
+            await AddActivityLogAsync(
+                "DeleteRoomTypeImage",
+                "RoomType",
+                roomTypeId,
+                $"Xóa hình ảnh {safeFileName} của loại phòng {roomType.Name}");
+
+            TempData["SuccessMessage"] = "Đã xóa hình ảnh";
+            return RedirectToAction(nameof(EditRoomType), new { id = roomTypeId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeactivateRoomType(long id)
         {
             var success = await _roomTypeService.DeactivateAsync(id);

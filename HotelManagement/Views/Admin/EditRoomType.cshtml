@@ -21,21 +21,6 @@
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
 
-            @if (Model.ExistingImageUrls.Any())
-            {
-                <div class="mb-3">
-                    <label class="form-label">Ảnh hiện có</label>
-                    <div class="d-flex flex-wrap gap-2">
-                        @foreach (var imageUrl in Model.ExistingImageUrls)
-                        {
-                            <img src="@imageUrl"
-                                 alt="@Model.Name"
-                                 style="width: 120px; height: 80px; object-fit: cover; border-radius: 8px;" />
-                        }
-                    </div>
-                </div>
-            }
-
             <div class="mb-3">
                 <label for="images" class="form-label">Thêm hình ảnh loại phòng</label>
                 <input type="file"
@@ -96,6 +81,43 @@
                 </a>
             </div>
         </form>
+
+        @if (Model.ExistingImageUrls.Any())
+        {
+            <hr />
+
+            <h5 class="mt-4">Hình ảnh hiện có</h5>
+
+            <div class="row g-3">
+                @foreach (var imageUrl in Model.ExistingImageUrls)
+                {
+                    <div class="col-sm-6 col-md-4 col-lg-3">
+                        <div class="card h-100">
+                            <img src="@imageUrl"
+                                 class="card-img-top"
+                                 alt="@Model.Name"
+                                 style="height: 150px; object-fit: cover;" />
+
+                            <div class="card-body">
+                                <form asp-controller="Admin"
+                                      asp-action="DeleteRoomTypeImage"
+                                      method="post"
+                                      onsubmit="return confirm('Xóa ảnh này?');">
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden" name="roomTypeId" value="@Model.Id" />
+                                    <input type="hidden" name="imageFileName" value="@System.IO.Path.GetFileName(imageUrl)" />
+
+                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                                        Xóa
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     </div>
 </div>
 
