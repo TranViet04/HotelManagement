@@ -1,0 +1,145 @@
+@model HotelManagement.ViewModels.Receptionist.CreateWalkInBookingViewModel
+
+@{
+    ViewData["Title"] = "Tạo booking tại quầy";
+}
+
+<section class="receptionist-create-booking-header shadow-sm p-4 p-lg-5 mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <div class="text-uppercase text-primary fw-semibold mb-2">
+                Tạo booking trực tiếp
+            </div>
+            <h1 class="fw-bold mb-3">Walk-in Booking</h1>
+            <p class="text-muted mb-0">Tạo đơn đặt phòng cho khách đến trực tiếp tại quầy.</p>
+        </div>
+    </div>
+</section>
+
+<form asp-controller="Receptionist" asp-action="CreateWalkInBooking" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Thông tin khách hàng</h5>
+                    <div class="mb-3">
+                        <label asp-for="CustomerIdentityNumber" class="form-label">Số CCCD/CMND <span class="text-danger">*</span></label>
+                        <input asp-for="CustomerIdentityNumber" class="form-control" />
+                        <span asp-validation-for="CustomerIdentityNumber" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="CustomerName" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                        <input asp-for="CustomerName" class="form-control" />
+                        <span asp-validation-for="CustomerName" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="CustomerPhoneNumber" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                        <input asp-for="CustomerPhoneNumber" class="form-control" />
+                        <span asp-validation-for="CustomerPhoneNumber" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="CustomerEmail" class="form-label">Email</label>
+                        <input asp-for="CustomerEmail" class="form-control" />
+                        <span asp-validation-for="CustomerEmail" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Thông tin phòng</h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="CheckInDate" class="form-label">Ngày nhận (Check-in)</label>
+                            <input asp-for="CheckInDate" type="date" class="form-control" />
+                            <span asp-validation-for="CheckInDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="CheckOutDate" class="form-label">Ngày trả (Check-out)</label>
+                            <input asp-for="CheckOutDate" type="date" class="form-control" />
+                            <span asp-validation-for="CheckOutDate" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="RoomId" class="form-label">Chọn phòng trống <span class="text-danger">*</span></label>
+                        <select asp-for="RoomId" asp-items="Model.RoomOptions" class="form-select"></select>
+                        <span asp-validation-for="RoomId" class="text-danger"></span>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Adults" class="form-label">Người lớn</label>
+                            <input asp-for="Adults" type="number" min="1" class="form-control" />
+                            <span asp-validation-for="Adults" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Children" class="form-label">Trẻ em</label>
+                            <input asp-for="Children" type="number" min="0" class="form-control" />
+                            <span asp-validation-for="Children" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PaymentMethod" class="form-label">Hình thức thanh toán</label>
+                        <select asp-for="PaymentMethod" asp-items="Model.PaymentMethodOptions" class="form-select"></select>
+                        <span asp-validation-for="PaymentMethod" class="text-danger"></span>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top d-flex justify-content-between align-items-center">
+                        <a asp-controller="Receptionist" asp-action="Bookings" class="btn btn-outline-secondary">Hủy</a>
+                        <button type="submit" class="btn btn-success btn-lg">Tạo Booking & Đi tới Thanh toán</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const checkInInput = document.getElementById("CheckInDate");
+            const checkOutInput = document.getElementById("CheckOutDate");
+            const roomSelect = document.getElementById("RoomId");
+
+            async function updateAvailableRooms() {
+                const checkIn = checkInInput.value;
+                const checkOut = checkOutInput.value;
+
+                if (!checkIn || !checkOut) return;
+
+                if (new Date(checkIn) >= new Date(checkOut)) {
+                    roomSelect.innerHTML = '<option value="">-- Ngày không hợp lệ --</option>';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/Receptionist/GetAvailableRooms?checkInDate=${checkIn}&checkOutDate=${checkOut}`);
+                    if (response.ok) {
+                        const options = await response.json();
+                        roomSelect.innerHTML = '';
+                        options.forEach(opt => {
+                            const optionEl = document.createElement("option");
+                            optionEl.value = opt.value;
+                            optionEl.text = opt.text;
+                            roomSelect.appendChild(optionEl);
+                        });
+                    }
+                } catch (error) {
+                    console.error("Error fetching rooms:", error);
+                }
+            }
+
+            checkInInput.addEventListener("change", updateAvailableRooms);
+            checkOutInput.addEventListener("change", updateAvailableRooms);
+        });
+    </script>
+}

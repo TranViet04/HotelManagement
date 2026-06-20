@@ -1,0 +1,417 @@
+@model HotelManagement.ViewModels.Chat.ReceptionistChatViewModel
+
+@{
+    ViewData["Title"] = "Trao đổi khách hàng";
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0";
+}
+
+<section class="chat-page-header bg-white rounded-4 shadow-sm p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+        <div>
+            <div class="text-uppercase text-primary fw-semibold mb-2">
+                Trao đổi khách hàng
+            </div>
+
+            <h1 class="fw-bold mb-2">
+                Chat với khách hàng
+            </h1>
+
+            <p class="text-muted mb-0">
+                Nhận và phản hồi tin nhắn realtime từ khách hàng.
+            </p>
+        </div>
+
+        <a asp-controller="Receptionist"
+           asp-action="Dashboard"
+           class="btn btn-outline-primary">
+            Về dashboard
+        </a>
+    </div>
+</section>
+
+<div class="chat-admin-layout">
+    <aside id="chatConversationList" class="chat-conversation-list">
+        @if (Model.Conversations == null || !Model.Conversations.Any())
+        {
+            <div class="alert alert-info mb-0">
+                Chưa có khách hàng nào nhắn tin.
+            </div>
+        }
+        else
+        {
+            @foreach (var item in Model.Conversations)
+            {
+                <a asp-controller="ReceptionistChat"
+                   asp-action="Index"
+                   asp-route-conversationId="@item.ConversationId"
+                   class="chat-conversation-item @(Model.SelectedConversationId == item.ConversationId ? "active" : "")">
+                    <div class="d-flex justify-content-between gap-2">
+                        <strong>@item.CustomerName</strong>
+
+                        @if (item.UnreadCount > 0)
+                        {
+                            <span class="badge bg-danger">@item.UnreadCount</span>
+                        }
+                    </div>
+
+                    <div class="text-muted small">
+                        @(item.CustomerPhoneNumber ?? item.CustomerEmail ?? "Chưa có liên hệ")
+                    </div>
+
+                    <div class="chat-preview">
+                        @item.LastMessagePreview
+                    </div>
+                </a>
+            }
+        }
+    </aside>
+
+    <main class="chat-window">
+        @if (!Model.SelectedConversationId.HasValue)
+        {
+            <div class="chat-empty-state">
+                Chọn một khách hàng để bắt đầu trao đổi.
+            </div>
+        }
+        else
+        {
+            <div class="chat-selected-title">
+                <strong>@Model.SelectedCustomerName</strong>
+            </div>
+
+            <div id="chatMessages" class="chat-messages">
+                @foreach (var message in Model.Messages)
+                {
+                    <div class="chat-message @(message.IsMine ? "mine" : "theirs")" data-message-id="@message.Id">
+                        <div class="chat-bubble">
+                            <div class="chat-meta">
+                                <strong>@message.SenderName</strong>
+                                <span>@message.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+
+                            @if (message.MessageType == "Image")
+                            {
+                                <a href="@message.ImageUrl" target="_blank">
+                                    <img src="@message.ImageUrl" class="chat-image" alt="Ảnh chat" />
+                                </a>
+                            }
+                            else
+                            {
+                                <div class="chat-text">@message.Content</div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="chat-input-area">
+                <div class="chat-image-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="conversationId" value="@Model.SelectedConversationId.Value" />
+                    <input id="imageInput"
+                           type="file"
+                           accept="image/jpeg,image/png,image/webp"
+                           class="form-control form-control-sm" />
+                    <button id="uploadImageButton" type="button" class="btn btn-outline-primary btn-sm">
+                        Gửi ảnh
+                    </button>
+                </div>
+
+                <form id="messageForm" class="chat-text-form">
+                    <input id="messageInput"
+                           type="text"
+                           class="form-control"
+                           maxlength="2000"
+                           placeholder="Nhập phản hồi..." />
+
+                    <button type="submit" class="btn btn-primary">
+                        Gửi
+                    </button>
+                </form>
+
+                <div id="chatError" class="text-danger small mt-2"></div>
+            </div>
+        }
+    </main>
+</div>
+
+@section Scripts {
+    <script>
+        const selectedConversationId = @(Model.SelectedConversationId.HasValue ? Model.SelectedConversationId.Value : 0);
+        const currentUserId = @currentUserId;
+        const messagesBox = document.getElementById("chatMessages");
+        const errorBox = document.getElementById("chatError");
+        const conversationList = document.getElementById("chatConversationList");
+
+        function scrollToBottom() {
+            if (messagesBox) {
+                messagesBox.scrollTop = messagesBox.scrollHeight;
+            }
+        }
+
+        function escapeHtml(value) {
+            const div = document.createElement("div");
+            div.textContent = value || "";
+            return div.innerHTML;
+        }
+
+        function appendMessage(message) {
+            if (!messagesBox) {
+                return;
+            }
+
+            if (message.id && document.querySelector(`[data-message-id="${message.id}"]`)) {
+                return;
+            }
+
+            if (Number(message.conversationId) !== Number(selectedConversationId)) {
+                return;
+            }
+
+            const isMine = Number(message.senderId) === Number(currentUserId);
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "chat-message " + (isMine ? "mine" : "theirs");
+
+            if (message.id) {
+                wrapper.dataset.messageId = message.id;
+            }
+
+            const bubble = document.createElement("div");
+            bubble.className = "chat-bubble";
+
+            const meta = document.createElement("div");
+            meta.className = "chat-meta";
+            meta.innerHTML = `<strong>${escapeHtml(message.senderName)}</strong><span>${escapeHtml(message.createdAtText)}</span>`;
+
+            bubble.appendChild(meta);
+
+            if (message.messageType === "Image") {
+                const link = document.createElement("a");
+                link.href = message.imageUrl;
+                link.target = "_blank";
+
+                const img = document.createElement("img");
+                img.src = message.imageUrl;
+                img.alt = "Ảnh chat";
+                img.className = "chat-image";
+
+                link.appendChild(img);
+                bubble.appendChild(link);
+            } else {
+                const text = document.createElement("div");
+                text.className = "chat-text";
+                text.textContent = message.content;
+                bubble.appendChild(text);
+            }
+
+            wrapper.appendChild(bubble);
+            messagesBox.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        function renderConversationList(conversations) {
+            if (!conversationList) {
+                return;
+            }
+
+            conversationList.innerHTML = "";
+
+            if (!conversations || conversations.length === 0) {
+                const empty = document.createElement("div");
+                empty.className = "alert alert-info mb-0";
+                empty.textContent = "Chưa có khách hàng nào nhắn tin.";
+                conversationList.appendChild(empty);
+                return;
+            }
+
+            for (const item of conversations) {
+                const link = document.createElement("a");
+                link.href = `/Receptionist/Chats?conversationId=${item.conversationId}`;
+                link.className = "chat-conversation-item";
+
+                if (Number(item.conversationId) === Number(selectedConversationId)) {
+                    link.classList.add("active");
+                }
+
+                const header = document.createElement("div");
+                header.className = "d-flex justify-content-between gap-2";
+
+                const name = document.createElement("strong");
+                name.textContent = item.customerName || "";
+                header.appendChild(name);
+
+                const unreadCount = Number(item.conversationId) === Number(selectedConversationId)
+                    ? 0
+                    : Number(item.unreadCount || 0);
+
+                if (unreadCount > 0) {
+                    const badge = document.createElement("span");
+                    badge.className = "badge bg-danger";
+                    badge.textContent = unreadCount;
+                    header.appendChild(badge);
+                }
+
+                const contact = document.createElement("div");
+                contact.className = "text-muted small";
+                contact.textContent = item.customerPhoneNumber || item.customerEmail || "Chưa có liên hệ";
+
+                const preview = document.createElement("div");
+                preview.className = "chat-preview";
+                preview.textContent = item.lastMessagePreview || "";
+
+                link.appendChild(header);
+                link.appendChild(contact);
+                link.appendChild(preview);
+                conversationList.appendChild(link);
+            }
+        }
+
+        async function refreshConversationList(conversationId) {
+            try {
+                const response = await fetch("/Receptionist/Chats/Conversations", {
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const conversations = await response.json();
+                renderConversationList(conversations);
+
+                if (Number(conversationId) !== Number(selectedConversationId)) {
+                    const title = document.title.replace(" *", "");
+                    document.title = title + " *";
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("ReceiveMessage", async function (message) {
+            appendMessage(message);
+
+            if (Number(message.conversationId) === Number(selectedConversationId)
+                && Number(message.senderId) !== Number(currentUserId)
+                && !document.hidden) {
+                try {
+                    await connection.invoke("MarkConversationAsRead", selectedConversationId);
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+        });
+
+        connection.on("ConversationUpdated", function (conversationId) {
+            refreshConversationList(conversationId);
+        });
+
+        async function startChat() {
+            try {
+                await connection.start();
+
+                if (selectedConversationId > 0) {
+                    await connection.invoke("JoinConversation", selectedConversationId);
+                    await connection.invoke("MarkConversationAsRead", selectedConversationId);
+                }
+
+                scrollToBottom();
+            } catch (err) {
+                console.error(err);
+                if (errorBox) {
+                    errorBox.textContent = "Không thể kết nối chat. Đang thử lại...";
+                }
+                setTimeout(startChat, 3000);
+            }
+        }
+
+        if (document.getElementById("messageForm")) {
+            document.getElementById("messageForm").addEventListener("submit", async function (event) {
+                event.preventDefault();
+
+                const input = document.getElementById("messageInput");
+                const content = input.value.trim();
+
+                if (!content || selectedConversationId <= 0) {
+                    return;
+                }
+
+                try {
+                    errorBox.textContent = "";
+                    await connection.invoke("SendTextMessage", selectedConversationId, content);
+                    input.value = "";
+                } catch (err) {
+                    console.error(err);
+                    errorBox.textContent = "Không gửi được tin nhắn.";
+                }
+            });
+        }
+
+        if (document.getElementById("uploadImageButton")) {
+            document.getElementById("uploadImageButton").addEventListener("click", async function () {
+                const input = document.getElementById("imageInput");
+
+                if (!input.files || input.files.length === 0) {
+                    errorBox.textContent = "Vui lòng chọn ảnh.";
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append(
+                    "__RequestVerificationToken",
+                    document.querySelector("input[name='__RequestVerificationToken']").value);
+                formData.append(
+                    "conversationId",
+                    document.querySelector("input[name='conversationId']").value);
+                formData.append("image", input.files[0]);
+
+                try {
+                    errorBox.textContent = "";
+
+                    const response = await fetch("/Chat/UploadImage", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        let result = {};
+                        try {
+                            result = await response.json();
+                        } catch {
+                        }
+
+                        errorBox.textContent = result.message || "Không gửi được ảnh.";
+                        return;
+                    }
+
+                    const result = await response.json();
+                    appendMessage(result.message);
+                    input.value = "";
+                } catch (err) {
+                    console.error(err);
+                    errorBox.textContent = "Không gửi được ảnh.";
+                }
+            });
+        }
+
+        document.addEventListener("visibilitychange", async function () {
+            if (!document.hidden && selectedConversationId > 0 && connection.state === signalR.HubConnectionState.Connected) {
+                try {
+                    await connection.invoke("MarkConversationAsRead", selectedConversationId);
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+        });
+
+        startChat();
+    </script>
+}

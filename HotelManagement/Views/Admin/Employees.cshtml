@@ -1,0 +1,126 @@
+@model List<HotelManagement.ViewModels.Admin.EmployeeListItemViewModel>
+
+@{
+    ViewData["Title"] = "Quản lý nhân viên lễ tân";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="page-title mb-0">Quản lý nhân viên lễ tân</h2>
+
+    <a asp-controller="Admin"
+       asp-action="CreateEmployee"
+       class="btn btn-primary">
+        Thêm lễ tân
+    </a>
+</div>
+
+<div class="card card-dashboard">
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info mb-0">
+                Chưa có nhân viên lễ tân nào.
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Họ tên</th>
+                            <th>Email</th>
+                            <th>Số điện thoại</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@item.FullName</td>
+                                <td>@item.Email</td>
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(item.PhoneNumber) ? "-" : item.PhoneNumber)
+                                </td>
+                                <td>
+                                    @if (item.Status == "Active")
+                                    {
+                                        <span class="badge bg-success">Đang hoạt động</span>
+                                    }
+                                    else if (item.Status == "Locked")
+                                    {
+                                        <span class="badge bg-danger">Đã khóa</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Ngưng dùng</span>
+                                    }
+                                </td>
+                                <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-end table-actions">
+                                    <a asp-controller="Admin"
+                                       asp-action="EditEmployee"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-outline-primary">
+                                        Sửa
+                                    </a>
+
+                                    @if (item.Status == "Active")
+                                    {
+                                        <form asp-controller="Admin"
+                                              asp-action="LockEmployee"
+                                              asp-route-id="@item.Id"
+                                              method="post"
+                                              class="d-inline"
+                                              onsubmit="return confirm('Bạn có chắc muốn khóa tài khoản này?');">
+                                            @Html.AntiForgeryToken()
+
+                                            <button type="submit" class="btn btn-sm btn-outline-warning">
+                                                Khóa
+                                            </button>
+                                        </form>
+                                    }
+
+                                    @if (item.Status == "Locked")
+                                    {
+                                        <form asp-controller="Admin"
+                                              asp-action="UnlockEmployee"
+                                              asp-route-id="@item.Id"
+                                              method="post"
+                                              class="d-inline">
+                                            @Html.AntiForgeryToken()
+
+                                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                                Mở khóa
+                                            </button>
+                                        </form>
+                                    }
+
+                                    @if (item.Status != "Inactive")
+                                    {
+                                        <form asp-controller="Admin"
+                                              asp-action="DeactivateEmployee"
+                                              asp-route-id="@item.Id"
+                                              method="post"
+                                              class="d-inline"
+                                              onsubmit="return confirm('Ngưng sử dụng tài khoản này?');">
+                                            @Html.AntiForgeryToken()
+
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                Ngưng dùng
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

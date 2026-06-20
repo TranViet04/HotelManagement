@@ -1,9 +1,199 @@
+@model HotelManagement.ViewModels.Customer.CustomerProfileViewModel
+
 @{
-    ViewData["Title"] = "Thông tin cá nhân";
+    ViewData["Title"] = "Hồ sơ cá nhân";
+
+    string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Active" => "bg-success",
+            "Locked" => "bg-danger",
+            "Inactive" => "bg-secondary",
+            _ => "bg-light text-dark"
+        };
+    }
+
+    string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Active" => "Đang hoạt động",
+            "Locked" => "Đã khóa",
+            "Inactive" => "Ngưng hoạt động",
+            _ => status
+        };
+    }
 }
 
-<h2 class="page-title">Thông tin cá nhân</h2>
+<section class="customer-profile-header shadow-sm p-4 p-lg-5 mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <div class="text-uppercase text-primary fw-semibold mb-2">
+                Hồ sơ khách hàng
+            </div>
 
-<div class="alert alert-secondary">
-    Chức năng hồ sơ khách hàng sẽ được triển khai sau.
+            <h1 class="fw-bold mb-3">
+                Thông tin cá nhân
+            </h1>
+
+            <p class="text-muted mb-0">
+                Cập nhật thông tin liên hệ để khách sạn có thể hỗ trợ đặt phòng chính xác hơn.
+            </p>
+        </div>
+
+        <div class="col-lg-4 text-lg-end">
+            <a asp-controller="Bookings"
+               asp-action="MyBookings"
+               class="btn btn-outline-primary">
+                Xem lịch sử đặt phòng
+            </a>
+        </div>
+    </div>
+</section>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <div class="customer-profile-avatar mb-3">
+                    @if (!string.IsNullOrWhiteSpace(Model.FullName))
+                    {
+                        @Model.FullName.Trim().Substring(0, 1).ToUpper()
+                    }
+                    else
+                    {
+                        <span>C</span>
+                    }
+                </div>
+
+                <h4 class="fw-bold mb-1">@Model.FullName</h4>
+
+                <div class="text-muted mb-3">
+                    @Model.Email
+                </div>
+
+                <div class="mb-3">
+                    <span class="badge @GetStatusBadgeClass(Model.Status)">
+                        @GetStatusText(Model.Status)
+                    </span>
+                </div>
+
+                <div class="room-info-list">
+                    <div>
+                        <span class="text-muted">Vai trò:</span>
+                        <strong>Customer</strong>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Ngày tạo:</span>
+                        <strong>@Model.CreatedAt.ToString("dd/MM/yyyy")</strong>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Cập nhật lần cuối:</span>
+                        <strong>
+                            @(Model.UpdatedAt.HasValue
+                                ? Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                : "Chưa cập nhật")
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-4 mb-0">
+                    Email, mật khẩu và trạng thái tài khoản sẽ được xử lý ở chức năng riêng.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">Cập nhật hồ sơ</h5>
+
+                <form asp-controller="Customer" asp-action="Profile" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="FullName" class="form-label">Họ tên</label>
+                            <input asp-for="FullName" class="form-control" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Email" class="form-label">Email</label>
+                            <input asp-for="Email"
+                                   class="form-control"
+                                   readonly />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                            <div class="form-text">
+                                Email không chỉnh sửa ở bước này.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="PhoneNumber" class="form-label">Số điện thoại</label>
+                            <input asp-for="PhoneNumber"
+                                   class="form-control"
+                                   placeholder="Ví dụ: 0900000000" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="IdentityNumber" class="form-label">Số giấy tờ tùy thân</label>
+                            <input asp-for="IdentityNumber"
+                                   class="form-control"
+                                   placeholder="CCCD/CMND/Hộ chiếu" />
+                            <span asp-validation-for="IdentityNumber" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Address" class="form-label">Địa chỉ</label>
+                            <textarea asp-for="Address"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="Nhập địa chỉ liên hệ"></textarea>
+                            <span asp-validation-for="Address" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            Lưu thay đổi
+                        </button>
+
+                        <a asp-controller="Home"
+                           asp-action="Index"
+                           class="btn btn-outline-secondary">
+                            Quay về trang chủ
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

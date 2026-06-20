@@ -1,0 +1,243 @@
+@model HotelManagement.ViewModels.Customer.RoomDetailViewModel
+
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<section class="room-detail-hero shadow-sm p-4 p-lg-5 mb-4">
+    <div class="row g-4 align-items-center">
+        <div class="col-lg-6">
+            @if (Model.ImageUrls.Any())
+            {
+                <div class="room-detail-gallery" data-room-gallery>
+                    <img src="@Model.ImageUrls.First()"
+                         class="room-detail-img"
+                         alt="@Model.Name"
+                         data-room-gallery-image />
+
+                    @if (Model.ImageUrls.Count > 1)
+                    {
+                        <button type="button"
+                                class="room-gallery-arrow room-gallery-arrow-prev"
+                                aria-label="Ảnh trước"
+                                data-room-gallery-prev>
+                            ‹
+                        </button>
+
+                        <button type="button"
+                                class="room-gallery-arrow room-gallery-arrow-next"
+                                aria-label="Ảnh sau"
+                                data-room-gallery-next>
+                            ›
+                        </button>
+
+                        <div class="room-gallery-counter" data-room-gallery-counter>
+                            1 / @Model.ImageUrls.Count
+                        </div>
+                    }
+                </div>
+
+                @if (Model.ImageUrls.Count > 1)
+                {
+                    <div class="room-gallery-thumbs mt-2" data-room-gallery-thumbs>
+                        @for (var i = 0; i < Model.ImageUrls.Count; i++)
+                        {
+                            <button type="button"
+                                    class="room-gallery-thumb @(i == 0 ? "active" : "")"
+                                    data-room-gallery-thumb="@i"
+                                    data-image-url="@Model.ImageUrls[i]"
+                                    aria-label="Xem ảnh @(i + 1)">
+                                <img src="@Model.ImageUrls[i]" alt="@Model.Name ảnh @(i + 1)" />
+                            </button>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="room-detail-img room-detail-placeholder d-flex align-items-center justify-content-center">
+                    <span>@Model.Name</span>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-6">
+            <div class="text-uppercase text-primary fw-semibold mb-2">
+                Chi tiết loại phòng
+            </div>
+
+            <h1 class="fw-bold mb-3">@Model.Name</h1>
+
+            <p class="text-muted mb-4">
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    @Model.Description
+                }
+                else
+                {
+                    <span>Chưa có mô tả cho loại phòng này.</span>
+                }
+            </p>
+
+            <div class="room-detail-meta mb-4">
+                <div>
+                    <span class="text-muted">Giá mỗi đêm</span>
+                    <strong>@Model.Price.ToString("N0") VND</strong>
+                </div>
+
+                <div>
+                    <span class="text-muted">Sức chứa</span>
+                    <strong>@Model.Capacity khách</strong>
+                </div>
+
+                <div>
+                    <span class="text-muted">Loại giường</span>
+                    <strong>@(Model.BedType ?? "Đang cập nhật")</strong>
+                </div>
+
+                <div>
+                    <span class="text-muted">Số phòng đang trống</span>
+                    <strong>@Model.AvailableRoomCount / @Model.TotalRoomCount</strong>
+                </div>
+            </div>
+
+            <a asp-controller="Rooms"
+               asp-action="Index"
+               asp-route-checkInDate="@(Model.CheckInDate?.ToString("yyyy-MM-dd"))"
+               asp-route-checkOutDate="@(Model.CheckOutDate?.ToString("yyyy-MM-dd"))"
+               asp-route-adults="@Model.Adults"
+               asp-route-children="@Model.Children"
+               class="btn btn-outline-primary">
+                Quay lại danh sách loại phòng
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <h2 class="h5 fw-bold mb-3">
+            Kiểm tra phòng trống cho loại phòng này
+        </h2>
+
+        <form asp-controller="Rooms"
+              asp-action="Details"
+              asp-route-id="@Model.RoomTypeId"
+              method="get"
+              class="row g-3"
+              data-stay-date-picker
+              data-room-availability-form>
+
+            <div class="col-md-3">
+                <label for="roomCheckInDate" class="form-label">Ngày nhận phòng</label>
+                <input type="date"
+                       id="roomCheckInDate"
+                       name="checkInDate"
+                       min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                       class="form-control stay-date-input"
+                       data-stay-check-in
+                       value="@(Model.CheckInDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+
+            <div class="col-md-3">
+                <label for="roomCheckOutDate" class="form-label">Ngày trả phòng</label>
+                <input type="date"
+                       id="roomCheckOutDate"
+                       name="checkOutDate"
+                       min="@((Model.CheckInDate?.Date ?? DateTime.Today).AddDays(1).ToString("yyyy-MM-dd"))"
+                       class="form-control stay-date-input"
+                       data-stay-check-out
+                       value="@(Model.CheckOutDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Người lớn</label>
+                <input type="number"
+                       name="adults"
+                       min="1"
+                       class="form-control"
+                       value="@Model.Adults" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label">Trẻ em</label>
+                <input type="number"
+                       name="children"
+                       min="0"
+                       class="form-control"
+                       value="@Model.Children" />
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100" data-room-availability-submit>
+                    Kiểm tra
+                </button>
+            </div>
+
+            <div class="col-12">
+                <div class="stay-date-tools">
+                    <span class="stay-date-tools-label">Chọn nhanh:</span>
+                    <div class="stay-date-presets" aria-label="Chọn nhanh số đêm">
+                        <button type="button" class="stay-date-preset" data-stay-nights="1">1 đêm</button>
+                        <button type="button" class="stay-date-preset" data-stay-nights="2">2 đêm</button>
+                        <button type="button" class="stay-date-preset" data-stay-nights="3">3 đêm</button>
+                        <button type="button" class="stay-date-preset" data-stay-nights="7">7 đêm</button>
+                    </div>
+                    <strong class="stay-date-summary" data-stay-summary aria-live="polite"></strong>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<div id="roomAvailabilityResults"
+     class="room-availability-results"
+     data-room-availability-results
+     aria-live="polite">
+    <partial name="_AvailabilityResults" model="Model" />
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const gallery = document.querySelector('[data-room-gallery]');
+
+            if (!gallery) {
+                return;
+            }
+
+            const image = gallery.querySelector('[data-room-gallery-image]');
+            const counter = gallery.querySelector('[data-room-gallery-counter]');
+            const prevButton = gallery.querySelector('[data-room-gallery-prev]');
+            const nextButton = gallery.querySelector('[data-room-gallery-next]');
+            const thumbs = Array.from(document.querySelectorAll('[data-room-gallery-thumb]'));
+            const imageUrls = thumbs.map(thumb => thumb.dataset.imageUrl);
+
+            if (!image || imageUrls.length <= 1) {
+                return;
+            }
+
+            let currentIndex = 0;
+
+            const showImage = (index) => {
+                currentIndex = (index + imageUrls.length) % imageUrls.length;
+                image.src = imageUrls[currentIndex];
+
+                if (counter) {
+                    counter.textContent = `${currentIndex + 1} / ${imageUrls.length}`;
+                }
+
+                thumbs.forEach((thumb, thumbIndex) => {
+                    thumb.classList.toggle('active', thumbIndex === currentIndex);
+                });
+            };
+
+            prevButton?.addEventListener('click', () => showImage(currentIndex - 1));
+            nextButton?.addEventListener('click', () => showImage(currentIndex + 1));
+
+            thumbs.forEach((thumb, index) => {
+                thumb.addEventListener('click', () => showImage(index));
+            });
+        })();
+    </script>
+}

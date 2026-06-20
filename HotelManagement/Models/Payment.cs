@@ -20,9 +20,15 @@ namespace HotelManagement.Models
 
         [Required]
         [MaxLength(30)]
-        public string Status { get; set; } = "Paid";
+        public string Status { get; set; } = "Pending";
 
-        public DateTime PaidAt { get; set; } = DateTime.Now;
+        public DateTime? PaidAt { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        public DateTime? QrExpiresAt { get; set; }
+
+        public long? SepayTransactionId { get; set; }
 
         public long? CreatedByUserId { get; set; }
 

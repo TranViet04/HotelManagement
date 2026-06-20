@@ -1,0 +1,153 @@
+@model HotelManagement.ViewModels.Receptionist.ReceptionistInvoiceDetailViewModel
+
+@{
+    Layout = null; // Clean layout for printing
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hóa đơn - @Model.InvoiceCode</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            color: #000;
+            background: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        .invoice-container {
+            max-width: 400px; /* Receipt printer size approx */
+            margin: 0 auto;
+            border: 1px solid #eee;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            font-size: 18px;
+            margin: 0 0 5px 0;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .section-title {
+            font-weight: bold;
+            border-bottom: 1px dashed #000;
+            margin: 15px 0 10px 0;
+            padding-bottom: 5px;
+        }
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .total-section {
+            border-top: 1px dashed #000;
+            margin-top: 15px;
+            padding-top: 10px;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+        }
+        @@media print {
+            body { padding: 0; }
+            .invoice-container { border: none; max-width: 100%; width: 100%; padding: 0; }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+    <div class="invoice-container">
+        <div class="header">
+            <h1>HotelManagement</h1>
+            <div>Đ/c: 123 Đường Tôn Đức Thắng, TP.HCM</div>
+            <div>SĐT: 0123.456.789</div>
+            <h2 style="margin-top: 15px; font-size: 16px;">HÓA ĐƠN THANH TOÁN</h2>
+        </div>
+
+        <div class="info-row">
+            <span>Mã HĐ:</span>
+            <span>@Model.InvoiceCode</span>
+        </div>
+        <div class="info-row">
+            <span>Ngày in:</span>
+            <span>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</span>
+        </div>
+        <div class="info-row">
+            <span>Thu ngân:</span>
+            <span>@Model.IssuedByName</span>
+        </div>
+        <div class="info-row">
+            <span>Khách hàng:</span>
+            <span>@Model.CustomerName</span>
+        </div>
+        <div class="info-row">
+            <span>Phòng:</span>
+            <span>@Model.RoomNumber (@Model.RoomTypeName)</span>
+        </div>
+
+        <div class="section-title">Chi tiết tiền phòng</div>
+        <div class="item-row">
+            <span>Tiền phòng (@Model.Nights đêm)</span>
+            <span>@Model.RoomAmount.ToString("N0")</span>
+        </div>
+
+        @if (Model.Services.Any())
+        {
+            <div class="section-title">Chi tiết dịch vụ</div>
+            @foreach (var s in Model.Services)
+            {
+                <div class="item-row">
+                    <span>@s.ServiceName x@(s.Quantity)</span>
+                    <span>@s.TotalPrice.ToString("N0")</span>
+                </div>
+            }
+        }
+
+        <div class="total-section">
+            <div class="total-row">
+                <span>TỔNG CỘNG:</span>
+                <span>@Model.TotalAmount.ToString("N0") VND</span>
+            </div>
+            <div class="item-row">
+                <span>Đã thanh toán:</span>
+                <span>@Model.PaidAmount.ToString("N0") VND</span>
+            </div>
+            
+            @if (Model.RemainingAmount > 0)
+            {
+                <div class="total-row" style="margin-top: 10px;">
+                    <span>CÒN LẠI:</span>
+                    <span>@Model.RemainingAmount.ToString("N0") VND</span>
+                </div>
+            }
+        </div>
+
+        <div class="footer">
+            <div>Cảm ơn quý khách và hẹn gặp lại!</div>
+            <div>--------------------------------</div>
+            <div>Powered by Antigravity IDE</div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -28,5 +28,7 @@ namespace HotelManagement.Models
         public RoomType? RoomType { get; set; }
 
         public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+
+        public ICollection<RoomImage> RoomImages { get; set; } = new List<RoomImage>();
     }
 }

@@ -1,0 +1,85 @@
+@model HotelManagement.ViewModels.Admin.RoomFormViewModel
+
+@{
+    ViewData["Title"] = "Thêm phòng";
+}
+
+<h2 class="page-title">Thêm phòng</h2>
+
+<div class="card form-card">
+    <div class="card-body">
+        <form asp-controller="Admin" asp-action="CreateRoom" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label asp-for="RoomNumber" class="form-label">Số phòng</label>
+                    <input asp-for="RoomNumber" class="form-control" />
+                    <span asp-validation-for="RoomNumber" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label asp-for="RoomTypeId" class="form-label">Loại phòng</label>
+                    <select asp-for="RoomTypeId" asp-items="Model.RoomTypeOptions" class="form-select">
+                        <option value="">-- Chọn loại phòng --</option>
+                    </select>
+                    <span asp-validation-for="RoomTypeId" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label asp-for="Floor" class="form-label">Tầng</label>
+                    <input asp-for="Floor" class="form-control" type="number" />
+                    <span asp-validation-for="Floor" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Status" class="form-label">Trạng thái</label>
+                <select asp-for="Status" class="form-select">
+                    <option value="Available">Available</option>
+                    <option value="Occupied">Occupied</option>
+                    <option value="Cleaning">Cleaning</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Note" class="form-label">Ghi chú</label>
+                <textarea asp-for="Note" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Note" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Hình ảnh phòng</label>
+                <input type="file"
+                       name="images"
+                       class="form-control"
+                       accept=".jpg,.jpeg,.png,.webp"
+                       multiple />
+                <div class="form-text">
+                    Có thể chọn nhiều ảnh. Chỉ hỗ trợ JPG, PNG, WEBP. Mỗi ảnh tối đa 5MB.
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    Lưu
+                </button>
+
+                <a asp-controller="Admin"
+                   asp-action="Rooms"
+                   class="btn btn-secondary">
+                    Quay lại
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

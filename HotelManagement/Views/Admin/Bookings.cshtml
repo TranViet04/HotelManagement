@@ -1,0 +1,177 @@
+@model List<HotelManagement.ViewModels.Admin.BookingTrackingViewModel>
+
+@{
+    ViewData["Title"] = "Theo dõi đặt phòng";
+}
+
+<h2 class="mb-4">Theo dõi đặt phòng</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<form method="get" class="row mb-3">
+    <div class="col-md-4">
+        <input type="text"
+               name="keyword"
+               value="@ViewBag.Keyword"
+               class="form-control"
+               placeholder="Tìm mã đặt phòng, khách hàng, SĐT, phòng..." />
+    </div>
+
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">-- Tất cả trạng thái --</option>
+            <option value="Pending" selected="@(ViewBag.Status == "Pending")">Pending</option>
+            <option value="Confirmed" selected="@(ViewBag.Status == "Confirmed")">Confirmed</option>
+            <option value="CheckedIn" selected="@(ViewBag.Status == "CheckedIn")">CheckedIn</option>
+            <option value="CheckedOut" selected="@(ViewBag.Status == "CheckedOut")">CheckedOut</option>
+            <option value="Cancelled" selected="@(ViewBag.Status == "Cancelled")">Cancelled</option>
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <input type="date"
+               name="checkInDate"
+               value="@ViewBag.CheckInDate"
+               class="form-control" />
+    </div>
+
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+            Lọc
+        </button>
+    </div>
+</form>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        Chưa có đặt phòng nào phù hợp.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Mã đặt</th>
+                    <th>Khách hàng</th>
+                    <th>Phòng</th>
+                    <th>Ngày ở</th>
+                    <th>Số khách</th>
+                    <th>Trạng thái</th>
+                    <th>Tổng tiền</th>
+                    <th>Ngày tạo</th>
+                    <th style="width: 100px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong>@item.BookingCode</strong>
+                        </td>
+
+                        <td>
+                            @item.CustomerName <br />
+                            <small class="text-muted">@item.CustomerPhone</small>
+                        </td>
+
+                        <td>
+                            Phòng @item.RoomNumber <br />
+                            <small class="text-muted">@item.RoomTypeName</small>
+                        </td>
+
+                        <td>
+                            @item.CheckInDate.ToString("dd/MM/yyyy") <br />
+                            <small class="text-muted">
+                                đến @item.CheckOutDate.ToString("dd/MM/yyyy")
+                            </small>
+                        </td>
+
+                        <td>
+                            @item.Adults người lớn
+                            @if (item.Children > 0)
+                            {
+                                <span>, @item.Children trẻ em</span>
+                            }
+                        </td>
+
+                        <td>
+                            @if (item.Status == "Pending")
+                            {
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            }
+                            else if (item.Status == "Confirmed")
+                            {
+                                <span class="badge bg-primary">Confirmed</span>
+                            }
+                            else if (item.Status == "CheckedIn")
+                            {
+                                <span class="badge bg-info text-dark">CheckedIn</span>
+                            }
+                            else if (item.Status == "CheckedOut")
+                            {
+                                <span class="badge bg-success">CheckedOut</span>
+                            }
+                            else if (item.Status == "Cancelled")
+                            {
+                                <span class="badge bg-danger">Cancelled</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">@item.Status</span>
+                            }
+                        </td>
+
+                        <td>
+                            @item.TotalAmount.ToString("N0") đ
+                        </td>
+
+                        <td>
+                            @item.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                        </td>
+
+                        <td>
+                            <a asp-controller="Admin"
+                               asp-action="BookingDetails"
+                               asp-route-id="@item.Id"
+                               class="btn btn-sm btn-outline-primary">
+                                Chi tiết
+                            </a>
+
+                            @if (item.Status == "Pending" || item.Status == "Confirmed")
+                            {
+                                <form asp-controller="Admin"
+                                      asp-action="DeleteBooking"
+                                      asp-route-id="@item.Id"
+                                      method="post"
+                                      class="d-inline"
+                                      onsubmit="return confirm('Bạn có chắc muốn hủy đặt phòng này không?');">
+                                    @Html.AntiForgeryToken()
+
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        Xóa
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

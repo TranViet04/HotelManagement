@@ -1,0 +1,211 @@
+@model HotelManagement.ViewModels.Receptionist.AddBookingServiceViewModel
+
+@{
+    ViewData["Title"] = "Thêm dịch vụ";
+}
+
+<section class="receptionist-add-service-header shadow-sm p-4 p-lg-5 mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <div class="text-uppercase text-primary fw-semibold mb-2">
+                Dịch vụ phát sinh
+            </div>
+
+            <h1 class="fw-bold mb-3">
+                Thêm dịch vụ cho @Model.BookingCode
+            </h1>
+
+            <p class="text-muted mb-0">
+                Đơn giá và thành tiền được tính lại ở server từ bảng dịch vụ.
+            </p>
+        </div>
+
+        <div class="col-lg-4 text-lg-end">
+            <a asp-controller="Receptionist"
+               asp-action="BookingDetails"
+               asp-route-id="@Model.BookingId"
+               class="btn btn-outline-primary">
+                Quay lại booking
+            </a>
+        </div>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">Thông tin booking</h5>
+
+                <div class="room-info-list">
+                    <div>
+                        <span class="text-muted">Mã booking:</span>
+                        <strong>@Model.BookingCode</strong>
+                    </div>
+                    <div>
+                        <span class="text-muted">Khách hàng:</span>
+                        <strong>@Model.CustomerName</strong>
+                    </div>
+                    <div>
+                        <span class="text-muted">Phòng:</span>
+                        <strong>@Model.RoomTypeName - @Model.RoomNumber</strong>
+                    </div>
+                    <div>
+                        <span class="text-muted">Ngày ở:</span>
+                        <strong>@Model.CheckInDate.ToString("dd/MM/yyyy") - @Model.CheckOutDate.ToString("dd/MM/yyyy")</strong>
+                    </div>
+                    <div>
+                        <span class="text-muted">Trạng thái:</span>
+                        <strong>@Model.BookingStatus</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">Chi phí hiện tại</h5>
+
+                <div class="booking-cost-row">
+                    <span>Tiền phòng</span>
+                    <strong>@Model.TotalRoomAmount.ToString("N0") VND</strong>
+                </div>
+                <div class="booking-cost-row">
+                    <span>Tiền dịch vụ</span>
+                    <strong>@Model.TotalServiceAmount.ToString("N0") VND</strong>
+                </div>
+                <hr />
+                <div class="booking-cost-row booking-cost-total">
+                    <span>Tổng cộng</span>
+                    <strong>@Model.TotalAmount.ToString("N0") VND</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">Thêm dịch vụ</h5>
+
+                @if (!Model.CanAddService)
+                {
+                    <div class="alert alert-warning mb-0">
+                        @Model.AddServiceBlockReason
+                    </div>
+                }
+                else
+                {
+                    <form asp-controller="Receptionist" asp-action="AddService" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="BookingId" />
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="ServiceId" class="form-label">Dịch vụ</label>
+                            <select asp-for="ServiceId"
+                                    asp-items="Model.ServiceOptions"
+                                    class="form-select"></select>
+                            <span asp-validation-for="ServiceId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Quantity" class="form-label">Số lượng</label>
+                            <input asp-for="Quantity"
+                                   type="number"
+                                   min="1"
+                                   max="100"
+                                   class="form-control" />
+                            <span asp-validation-for="Quantity" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Note" class="form-label">Ghi chú</label>
+                            <textarea asp-for="Note"
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="Ví dụ: giao lên phòng, khách yêu cầu thêm..."></textarea>
+                            <span asp-validation-for="Note" class="text-danger"></span>
+                        </div>
+
+                        <div class="alert alert-info">
+                            Đơn giá và thành tiền sẽ được tính lại ở server từ bảng dịch vụ, không lấy từ form.
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-success">
+                                Thêm dịch vụ
+                            </button>
+
+                            <a asp-controller="Receptionist"
+                               asp-action="BookingDetails"
+                               asp-route-id="@Model.BookingId"
+                               class="btn btn-outline-secondary">
+                                Hủy
+                            </a>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">Dịch vụ đã sử dụng</h5>
+
+                @if (Model.ExistingServices == null || !Model.ExistingServices.Any())
+                {
+                    <div class="alert alert-info mb-0">
+                        Booking này chưa có dịch vụ phát sinh.
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0 receptionist-service-items-table">
+                            <thead>
+                                <tr>
+                                    <th>Dịch vụ</th>
+                                    <th>Số lượng</th>
+                                    <th>Đơn giá</th>
+                                    <th>Thành tiền</th>
+                                    <th>Thời gian</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @foreach (var item in Model.ExistingServices)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">@item.ServiceName</div>
+                                            <div class="text-muted small">
+                                                @(item.Category ?? "Chưa phân loại")
+                                            </div>
+
+                                            @if (!string.IsNullOrWhiteSpace(item.Note))
+                                            {
+                                                <div class="text-muted small">
+                                                    Ghi chú: @item.Note
+                                                </div>
+                                            }
+                                        </td>
+                                        <td>@item.Quantity @(item.Unit ?? "")</td>
+                                        <td>@item.UnitPrice.ToString("N0") VND</td>
+                                        <td><strong>@item.TotalPrice.ToString("N0") VND</strong></td>
+                                        <td>@item.UsedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

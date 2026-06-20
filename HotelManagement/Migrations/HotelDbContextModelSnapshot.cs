@@ -111,6 +111,9 @@ namespace HotelManagement.Migrations
                     b.Property<long>("CustomerId")
                         .HasColumnType("bigint");
 
+                    b.Property<decimal>("RefundAmount")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<long>("RoomId")
                         .HasColumnType("bigint");
 
@@ -195,6 +198,97 @@ namespace HotelManagement.Migrations
                     b.ToTable("BookingServices");
                 });
 
+            modelBuilder.Entity("HotelManagement.Models.ChatConversation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<long?>("AssignedReceptionistId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("CustomerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("LastMessageAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedReceptionistId");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("LastMessageAt");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ChatConversations");
+                });
+
+            modelBuilder.Entity("HotelManagement.Models.ChatMessage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Content")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<long>("ConversationId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MessageType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<long>("SenderId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConversationId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("MessageType");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("ChatMessages");
+                });
+
             modelBuilder.Entity("HotelManagement.Models.Invoice", b =>
                 {
                     b.Property<long>("Id")
@@ -276,6 +370,9 @@ namespace HotelManagement.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<long?>("CreatedByUserId")
                         .HasColumnType("bigint");
 
@@ -286,7 +383,7 @@ namespace HotelManagement.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<DateTime>("PaidAt")
+                    b.Property<DateTime?>("PaidAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("PaymentCode")
@@ -298,6 +395,12 @@ namespace HotelManagement.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("QrExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("SepayTransactionId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -358,6 +461,42 @@ namespace HotelManagement.Migrations
                     b.HasIndex("RoomTypeId", "Status");
 
                     b.ToTable("Rooms");
+                });
+
+            modelBuilder.Entity("HotelManagement.Models.RoomImage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Caption")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsMain")
+                        .HasColumnType("bit");
+
+                    b.Property<long>("RoomId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoomId");
+
+                    b.ToTable("RoomImages");
                 });
 
             modelBuilder.Entity("HotelManagement.Models.RoomType", b =>
@@ -567,6 +706,43 @@ namespace HotelManagement.Migrations
                     b.Navigation("Service");
                 });
 
+            modelBuilder.Entity("HotelManagement.Models.ChatConversation", b =>
+                {
+                    b.HasOne("HotelManagement.Models.User", "AssignedReceptionist")
+                        .WithMany()
+                        .HasForeignKey("AssignedReceptionistId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HotelManagement.Models.User", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedReceptionist");
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("HotelManagement.Models.ChatMessage", b =>
+                {
+                    b.HasOne("HotelManagement.Models.ChatConversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HotelManagement.Models.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("Sender");
+                });
+
             modelBuilder.Entity("HotelManagement.Models.Invoice", b =>
                 {
                     b.HasOne("HotelManagement.Models.Booking", "Booking")
@@ -614,11 +790,27 @@ namespace HotelManagement.Migrations
                     b.Navigation("RoomType");
                 });
 
+            modelBuilder.Entity("HotelManagement.Models.RoomImage", b =>
+                {
+                    b.HasOne("HotelManagement.Models.Room", "Room")
+                        .WithMany("RoomImages")
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Room");
+                });
+
             modelBuilder.Entity("HotelManagement.Models.Booking", b =>
                 {
                     b.Navigation("BookingServices");
 
                     b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("HotelManagement.Models.ChatConversation", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("HotelManagement.Models.Invoice", b =>
@@ -629,6 +821,8 @@ namespace HotelManagement.Migrations
             modelBuilder.Entity("HotelManagement.Models.Room", b =>
                 {
                     b.Navigation("Bookings");
+
+                    b.Navigation("RoomImages");
                 });
 
             modelBuilder.Entity("HotelManagement.Models.RoomType", b =>

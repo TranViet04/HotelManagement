@@ -47,9 +47,9 @@
 
     <div class="sidebar-section">Vận hành</div>
 
-    <a class="sidebar-link @Active("Receptionist", "Rooms")"
+    <a class="sidebar-link @Active("Receptionist", "RoomStatus")"
        asp-controller="Receptionist"
-       asp-action="Rooms">
+       asp-action="RoomStatus">
         Tình trạng phòng
     </a>
 
@@ -57,6 +57,16 @@
        asp-controller="Receptionist"
        asp-action="BookingServices">
         Dịch vụ phát sinh
+    </a>
+
+    <a class="sidebar-link d-flex align-items-center justify-content-between gap-2 @Active("ReceptionistChat", "Index")"
+       asp-controller="ReceptionistChat"
+       asp-action="Index">
+        <span>Trao đổi khách hàng</span>
+        <span class="badge rounded-pill bg-danger"
+              data-receptionist-chat-count
+              aria-label="Tin nhắn khách hàng chưa đọc"
+              hidden></span>
     </a>
 
     <div class="sidebar-section">Thanh toán</div>
