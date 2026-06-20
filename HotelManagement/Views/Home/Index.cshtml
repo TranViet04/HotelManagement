@@ -2,248 +2,337 @@
 
 @{
     ViewData["Title"] = "Trang chủ";
+    var todayValue = DateTime.Today.ToString("yyyy-MM-dd");
+    var checkOutMinimum = Model.CheckInDate.Date.AddDays(1).ToString("yyyy-MM-dd");
 }
 
-<section class="customer-hero boutique-hero p-4 p-lg-5 mb-4 shadow-sm">
-    <div class="row align-items-center g-4">
-        <div class="col-lg-7">
-            <div class="text-uppercase text-primary fw-semibold mb-2">
-                HotelManagement
-            </div>
+<div class="official-hotel-home">
+    <h1 class="visually-hidden">HotelManagement - trải nghiệm lưu trú và đặt phòng trực tuyến</h1>
 
-            <h1 class="display-4 fw-bold mb-3">
-                Nghỉ dưỡng tinh tế, đặt phòng nhanh chóng
-            </h1>
+    @await Component.InvokeAsync("RoomTypeCarousel")
 
-            <p class="lead text-muted mb-4">
-                Khám phá phòng nghỉ phù hợp, xem hình ảnh chi tiết và đặt phòng trực tuyến chỉ trong vài bước.
-            </p>
-
-            <div class="d-flex flex-wrap gap-2">
-                <a asp-controller="Rooms" asp-action="Index" class="btn btn-primary btn-lg">
-                    Xem loại phòng
-                </a>
-
-                <a href="#services" class="btn btn-outline-dark btn-lg">
-                    Khám phá dịch vụ
-                </a>
-            </div>
+    <section id="booking" class="home-booking-panel" aria-label="Kiểm tra phòng trống">
+        <div class="home-booking-panel-heading">
+            <span>Đặt phòng trực tiếp</span>
+            <strong>Chọn kỳ lưu trú</strong>
         </div>
 
-        <div class="col-lg-5">
-            <div class="booking-search-card boutique-search-card hero-booking-card bg-light p-4">
-                <div class="text-uppercase text-primary fw-semibold mb-2">Đặt phòng nhanh</div>
-                <h5 class="fw-bold mb-3">Chọn loại phòng phù hợp và gửi yêu cầu đặt phòng</h5>
-                <p class="text-muted mb-4">
-                    Xem thông tin từng loại phòng, chọn phòng cụ thể và gửi đặt phòng trực tuyến. Lễ tân sẽ hỗ trợ xác nhận trong thời gian ngắn.
-                </p>
-
-                <div class="hero-booking-steps mb-4">
-                    <div>
-                        <strong>01</strong>
-                        <span>Xem loại phòng</span>
-                    </div>
-                    <div>
-                        <strong>02</strong>
-                        <span>Chọn phòng cụ thể</span>
-                    </div>
-                    <div>
-                        <strong>03</strong>
-                        <span>Gửi yêu cầu đặt phòng</span>
-                    </div>
-                </div>
-
-                <div class="d-grid gap-2">
-                    <a asp-controller="Rooms" asp-action="Index" class="btn btn-primary">
-                        Xem danh sách phòng
-                    </a>
-
-                    <a asp-controller="CustomerChat" asp-action="Index" class="btn btn-outline-dark">
-                        Nhắn lễ tân
-                    </a>
-                </div>
+        <form asp-controller="Rooms"
+              asp-action="Index"
+              method="get"
+              class="home-booking-form"
+              data-stay-date-picker>
+            <div class="home-booking-field">
+                <label asp-for="CheckInDate">Ngày nhận phòng</label>
+                <input asp-for="CheckInDate"
+                       type="date"
+                       min="@todayValue"
+                       class="form-control"
+                       data-stay-check-in />
             </div>
-        </div>
-    </div>
-</section>
 
-@await Component.InvokeAsync("RoomTypeCarousel")
+            <div class="home-booking-field">
+                <label asp-for="CheckOutDate">Ngày trả phòng</label>
+                <input asp-for="CheckOutDate"
+                       type="date"
+                       min="@checkOutMinimum"
+                       class="form-control"
+                       data-stay-check-out />
+            </div>
 
-<section class="mb-5">
-    <div class="boutique-section-heading">
+            <div class="home-booking-field home-booking-guests">
+                <label asp-for="Adults">Người lớn</label>
+                <input asp-for="Adults" type="number" min="1" max="20" class="form-control" />
+            </div>
+
+            <div class="home-booking-field home-booking-guests">
+                <label asp-for="Children">Trẻ em</label>
+                <input asp-for="Children" type="number" min="0" max="20" class="form-control" />
+            </div>
+
+            <button type="submit" class="btn btn-primary home-booking-submit">
+                Kiểm tra phòng trống
+            </button>
+        </form>
+    </section>
+
+    <section class="home-direct-benefits mb-5" aria-label="Lợi ích đặt phòng trực tiếp" data-reveal>
         <div>
-            <div class="text-uppercase text-primary fw-semibold mb-2">Lưu trú</div>
-            <h2 class="h3 fw-bold mb-1">Loại phòng nổi bật</h2>
-            <p class="text-muted mb-0">
-                Những lựa chọn được chuẩn bị cho kỳ nghỉ, chuyến công tác hoặc dịp đặc biệt của bạn.
-            </p>
+            <strong>Giá minh bạch</strong>
+            <span>Xem rõ giá phòng theo từng hạng</span>
+        </div>
+        <div>
+            <strong>Phòng trống cập nhật</strong>
+            <span>Kiểm tra trực tiếp theo ngày lưu trú</span>
+        </div>
+        <div>
+            <strong>Hỗ trợ 24/7</strong>
+            <span>Nhắn lễ tân ngay trên website</span>
+        </div>
+    </section>
+
+    <section id="services" class="boutique-services home-section mb-5" data-reveal>
+        <div class="boutique-section-heading">
+            <div>
+                <div class="home-section-eyebrow">Dịch vụ</div>
+                <h2 class="home-section-title">Tiện ích nổi bật</h2>
+                <p class="text-muted mb-0">
+                    Những dịch vụ giúp kỳ nghỉ của bạn thoải mái và trọn vẹn hơn.
+                </p>
+            </div>
         </div>
 
-        <a asp-controller="Rooms" asp-action="Index" class="btn btn-outline-secondary d-none d-md-inline-block">
-            Xem tất cả
-        </a>
-    </div>
-
-    @if (Model.FeaturedRooms == null || !Model.FeaturedRooms.Any())
-    {
-        <div class="alert alert-info">
-            Hiện chưa có loại phòng nào để hiển thị.
-        </div>
-    }
-    else
-    {
         <div class="row g-4">
-            @foreach (var room in Model.FeaturedRooms)
-            {
-                var thumbnailUrl = string.IsNullOrWhiteSpace(room.ThumbnailUrl)
-                    ? "/images/rooms/default-room.jpg"
-                    : room.ThumbnailUrl;
+            <div class="col-md-6 col-xl-3">
+                <article class="boutique-service-card home-service-card">
+                    <div class="home-service-image">
+                        <img src="~/images/home/service-breakfast.jpg"
+                             alt="Không gian nhà hàng và buffet sáng tại khách sạn"
+                             loading="lazy"
+                             decoding="async" />
+                        <span class="service-number">01</span>
+                    </div>
+                    <div class="home-service-content">
+                        <h3>Nhà hàng &amp; ăn sáng</h3>
+                        <p>Khởi đầu ngày mới với thực đơn linh hoạt và không gian dùng bữa ấm cúng.</p>
+                    </div>
+                </article>
+            </div>
 
-                <div class="col-md-6 col-xl-3">
-                    <div class="card room-card boutique-room-card h-100 border-0 shadow-sm">
-                        <img src="@thumbnailUrl"
-                             class="card-img-top room-card-img"
-                             alt="@room.Name"
-                             onerror="this.onerror=null;this.src='/images/rooms/default-room.jpg';" />
+            <div class="col-md-6 col-xl-3">
+                <article class="boutique-service-card home-service-card">
+                    <div class="home-service-image">
+                        <img src="~/images/home/service-pool.jpg"
+                             alt="Hồ bơi thư giãn với ghế nghỉ và cây xanh"
+                             loading="lazy"
+                             decoding="async" />
+                        <span class="service-number">02</span>
+                    </div>
+                    <div class="home-service-content">
+                        <h3>Hồ bơi thư giãn</h3>
+                        <p>Khoảng nghỉ riêng tư để thả lỏng, tận hưởng ánh nắng và nhịp sống chậm rãi.</p>
+                    </div>
+                </article>
+            </div>
 
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title fw-bold">@room.Name</h5>
+            <div class="col-md-6 col-xl-3">
+                <article class="boutique-service-card home-service-card">
+                    <div class="home-service-image">
+                        <img src="~/images/home/service-spa.jpg"
+                             alt="Phòng spa yên tĩnh với giường trị liệu và ánh sáng ấm"
+                             loading="lazy"
+                             decoding="async" />
+                        <span class="service-number">03</span>
+                    </div>
+                    <div class="home-service-content">
+                        <h3>Spa &amp; chăm sóc</h3>
+                        <p>Các liệu trình nhẹ nhàng giúp phục hồi năng lượng sau hành trình dài.</p>
+                    </div>
+                </article>
+            </div>
 
-                            <p class="card-text text-muted small flex-grow-1">
-                                @if (!string.IsNullOrWhiteSpace(room.Description))
-                                {
-                                    @room.Description
-                                }
-                                else
-                                {
-                                    <span>Không gian lưu trú tiện nghi, phù hợp cho nhiều nhu cầu.</span>
-                                }
-                            </p>
+            <div class="col-md-6 col-xl-3">
+                <article class="boutique-service-card home-service-card">
+                    <div class="home-service-image">
+                        <img src="~/images/home/service-airport-transfer.jpg"
+                             alt="Xe đưa đón sân bay chờ tại lối vào khách sạn"
+                             loading="lazy"
+                             decoding="async" />
+                        <span class="service-number">04</span>
+                    </div>
+                    <div class="home-service-content">
+                        <h3>Đưa đón sân bay</h3>
+                        <p>Hỗ trợ di chuyển thuận tiện giữa khách sạn, sân bay và khu vực trung tâm.</p>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
 
-                            <div class="boutique-room-meta mb-3">
-                                <span>@room.Capacity khách</span>
-                                <span>@(room.BedType ?? "Đang cập nhật")</span>
-                                <span>@room.AvailableRoomCount phòng trống</span>
-                            </div>
+    <section id="about" class="home-experience home-section mb-5" data-reveal>
+        <div class="row align-items-center g-0">
+            <div class="col-lg-6">
+                <div class="home-experience-image">
+                    <img src="~/images/home/hero-lobby.jpg"
+                         alt="Không gian sảnh và hồ bơi tại khách sạn"
+                         loading="lazy" />
+                </div>
+            </div>
 
-                            <div class="fw-bold text-primary mb-3">
-                                @room.Price.ToString("N0") VND / đêm
-                            </div>
+            <div class="col-lg-6">
+                <div class="home-experience-content">
+                    <div class="home-section-eyebrow">Trải nghiệm</div>
+                    <h2 class="home-section-title">Tận hưởng kỳ nghỉ theo cách của bạn</h2>
+                    <p class="text-muted">
+                        Một không gian lưu trú yên tĩnh giữa thành phố, kết hợp phòng nghỉ tiện nghi,
+                        dịch vụ linh hoạt và đội ngũ lễ tân luôn sẵn sàng hỗ trợ.
+                    </p>
 
-                            <a asp-controller="Rooms"
-                               asp-action="Details"
-                               asp-route-id="@room.RoomTypeId"
-                               class="btn btn-outline-primary w-100">
-                                Xem chi tiết
-                            </a>
+                    <div class="home-experience-list">
+                        <div>
+                            <strong>24/7</strong>
+                            <span>Lễ tân hỗ trợ trực tiếp và qua chat</span>
+                        </div>
+                        <div>
+                            <strong>Rõ ràng</strong>
+                            <span>Giá phòng và tình trạng phòng được cập nhật</span>
+                        </div>
+                        <div>
+                            <strong>Thuận tiện</strong>
+                            <span>Đặt phòng và theo dõi lịch sử trực tuyến</span>
                         </div>
                     </div>
-                </div>
-            }
-        </div>
-    }
-</section>
 
-<section id="services" class="boutique-services mb-5">
-    <div class="boutique-section-heading">
-        <div>
-            <div class="text-uppercase text-primary fw-semibold mb-2">Dịch vụ</div>
-            <h2 class="h3 fw-bold mb-1">Trải nghiệm nổi bật</h2>
-            <p class="text-muted mb-0">
-                Các tiện ích giúp kỳ lưu trú trở nên thoải mái, riêng tư và trọn vẹn hơn.
-            </p>
-        </div>
-    </div>
-
-    <div class="row g-4">
-        <div class="col-md-6 col-xl-3">
-            <div class="boutique-service-card">
-                <div class="service-number">01</div>
-                <h5>Nhà hàng</h5>
-                <p>Thực đơn linh hoạt cho bữa sáng, bữa tối và những buổi gặp gỡ thân mật.</p>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-xl-3">
-            <div class="boutique-service-card">
-                <div class="service-number">02</div>
-                <h5>Spa thư giãn</h5>
-                <p>Không gian chăm sóc sức khỏe nhẹ nhàng sau hành trình dài.</p>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-xl-3">
-            <div class="boutique-service-card">
-                <div class="service-number">03</div>
-                <h5>Giặt ủi</h5>
-                <p>Dịch vụ tiện lợi cho khách lưu trú dài ngày hoặc đi công tác.</p>
-            </div>
-        </div>
-
-        <div class="col-md-6 col-xl-3">
-            <div class="boutique-service-card">
-                <div class="service-number">04</div>
-                <h5>Đưa đón</h5>
-                <p>Hỗ trợ di chuyển nhanh gọn từ sân bay, nhà ga hoặc các điểm trung tâm.</p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section id="about" class="boutique-about mb-5">
-    <div class="row align-items-center g-4">
-        <div class="col-lg-5">
-            <div class="boutique-about-image"></div>
-        </div>
-
-        <div class="col-lg-7">
-            <div class="text-uppercase text-primary fw-semibold mb-2">Giới thiệu</div>
-            <h2 class="fw-bold mb-3">Một điểm dừng chân ấm áp giữa nhịp sống thành phố</h2>
-            <p class="text-muted">
-                HotelManagement được định hướng như một khách sạn boutique nhỏ gọn: hình ảnh rõ ràng,
-                thông tin phòng minh bạch, thao tác đặt phòng nhanh và đội ngũ lễ tân luôn sẵn sàng hỗ trợ qua chat realtime.
-            </p>
-
-            <div class="boutique-stats">
-                <div>
-                    <strong>24/7</strong>
-                    <span>Hỗ trợ lễ tân</span>
-                </div>
-                <div>
-                    <strong>Online</strong>
-                    <span>Đặt phòng nhanh</span>
-                </div>
-                <div>
-                    <strong>Rõ ràng</strong>
-                    <span>Giá và phòng trống</span>
+                    <a asp-controller="Rooms" asp-action="Index" class="btn btn-outline-dark mt-4">
+                        Khám phá lưu trú
+                    </a>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-<section class="boutique-gallery mb-5">
-    <div class="boutique-section-heading">
-        <div>
-            <div class="text-uppercase text-primary fw-semibold mb-2">Gallery</div>
-            <h2 class="h3 fw-bold mb-1">Không gian khách sạn</h2>
+    <section id="offers" class="home-offers home-section mb-5" data-reveal>
+        <div class="boutique-section-heading">
+            <div>
+                <div class="home-section-eyebrow">Ưu đãi</div>
+                <h2 class="home-section-title">Gói lưu trú dành cho bạn</h2>
+                <p class="text-muted mb-0">
+                    Những gợi ý phù hợp cho kỳ nghỉ ngắn ngày, chuyến đi gia đình hoặc kế hoạch đặt sớm.
+                </p>
+            </div>
+
+            <a href="#booking" class="btn btn-outline-secondary d-none d-md-inline-block">
+                Kiểm tra phòng trống
+            </a>
         </div>
-    </div>
 
-    <div class="boutique-gallery-grid">
-        <div class="gallery-tile gallery-large"></div>
-        <div class="gallery-tile gallery-restaurant"></div>
-        <div class="gallery-tile gallery-room"></div>
-    </div>
-</section>
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <article class="home-offer-card">
+                    <img src="~/images/home/hero-suite.jpg" alt="Không gian nghỉ dưỡng cuối tuần" loading="lazy" />
+                    <div class="home-offer-content">
+                        <span>Cuối tuần</span>
+                        <h3>Nghỉ dưỡng thư thái</h3>
+                        <p>Gợi ý lưu trú hai ngày một đêm cho khoảng nghỉ ngắn giữa lịch trình bận rộn.</p>
+                        <a asp-controller="Rooms" asp-action="Index">Xem hạng phòng</a>
+                    </div>
+                </article>
+            </div>
 
-<section class="boutique-cta mb-4">
-    <div>
-        <div class="text-uppercase fw-semibold mb-2">Sẵn sàng cho kỳ lưu trú tiếp theo?</div>
-        <h2 class="fw-bold mb-0">Khám phá các loại phòng và đặt phòng chỉ trong vài bước.</h2>
-    </div>
+            <div class="col-lg-4">
+                <article class="home-offer-card">
+                    <img src="~/images/home/hero-room.jpg" alt="Phòng nghỉ dành cho gia đình" loading="lazy" />
+                    <div class="home-offer-content">
+                        <span>Gia đình</span>
+                        <h3>Không gian cho cả nhà</h3>
+                        <p>Lựa chọn phòng rộng rãi và tiện ích phù hợp cho chuyến đi cùng người thân.</p>
+                        <a asp-controller="Rooms" asp-action="Index">Khám phá lựa chọn</a>
+                    </div>
+                </article>
+            </div>
 
-    <a asp-controller="Rooms" asp-action="Index" class="btn btn-light btn-lg">
-        Xem loại phòng
-    </a>
-</section>
+            <div class="col-lg-4">
+                <article class="home-offer-card">
+                    <img src="~/images/home/hero-hotel.jpg" alt="Khách sạn về đêm cho kế hoạch đặt sớm" loading="lazy" />
+                    <div class="home-offer-content">
+                        <span>Đặt sớm</span>
+                        <h3>Chủ động kế hoạch</h3>
+                        <p>Kiểm tra phòng trống sớm để chọn được hạng phòng phù hợp với lịch trình.</p>
+                        <a asp-controller="Rooms" asp-action="Index">Kiểm tra ngay</a>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="home-gallery home-section mb-5" data-reveal>
+        <div class="boutique-section-heading">
+            <div>
+                <div class="home-section-eyebrow">Gallery</div>
+                <h2 class="home-section-title">Một thoáng HotelManagement</h2>
+                <p class="text-muted mb-0">Khám phá không gian nghỉ, sảnh đón khách và nhịp sống về đêm.</p>
+            </div>
+        </div>
+
+        <div class="home-gallery-grid">
+            <figure class="home-gallery-item home-gallery-featured">
+                <img src="~/images/home/hero-hotel.jpg" alt="Toàn cảnh khách sạn và hồ bơi về đêm" loading="lazy" />
+                <figcaption>Không gian nghỉ dưỡng</figcaption>
+            </figure>
+            <figure class="home-gallery-item">
+                <img src="~/images/home/hero-lobby.jpg" alt="Sảnh khách sạn thoáng rộng" loading="lazy" />
+                <figcaption>Sảnh đón khách</figcaption>
+            </figure>
+            <figure class="home-gallery-item">
+                <img src="~/images/home/hero-suite.jpg" alt="Phòng nghỉ nhiều ánh sáng" loading="lazy" />
+                <figcaption>Phòng nghỉ tinh tế</figcaption>
+            </figure>
+            <figure class="home-gallery-item home-gallery-wide">
+                <img src="~/images/home/hero-room.jpg" alt="Phòng suite tiện nghi" loading="lazy" />
+                <figcaption>Tiện nghi riêng tư</figcaption>
+            </figure>
+        </div>
+    </section>
+
+    <section class="home-reviews home-section mb-5" data-reveal>
+        <div class="boutique-section-heading">
+            <div>
+                <div class="home-section-eyebrow">Cảm nhận</div>
+                <h2 class="home-section-title">Điều khách lưu trú yêu thích</h2>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <blockquote class="home-review-card">
+                    <div class="home-review-stars" aria-label="5 trên 5 sao">★★★★★</div>
+                    <p>“Phòng sạch sẽ, thông tin rõ ràng và thao tác đặt phòng rất nhanh.”</p>
+                    <footer>Minh Anh · Chuyến công tác</footer>
+                </blockquote>
+            </div>
+            <div class="col-md-4">
+                <blockquote class="home-review-card">
+                    <div class="home-review-stars" aria-label="5 trên 5 sao">★★★★★</div>
+                    <p>“Lễ tân phản hồi nhanh, hỗ trợ gia đình tôi chu đáo trong suốt kỳ nghỉ.”</p>
+                    <footer>Thu Hà · Kỳ nghỉ gia đình</footer>
+                </blockquote>
+            </div>
+            <div class="col-md-4">
+                <blockquote class="home-review-card">
+                    <div class="home-review-stars" aria-label="5 trên 5 sao">★★★★★</div>
+                    <p>“Không gian yên tĩnh, tiện nghi vừa đủ và vị trí thuận tiện để di chuyển.”</p>
+                    <footer>Quang Huy · Nghỉ cuối tuần</footer>
+                </blockquote>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="home-contact mb-4" data-reveal>
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <div class="home-section-eyebrow">Vị trí &amp; liên hệ</div>
+                <h2 class="home-section-title text-white">Bắt đầu kỳ lưu trú của bạn</h2>
+                <p>
+                    Tọa lạc tại Quận 1, TP. Hồ Chí Minh, thuận tiện kết nối các điểm tham quan,
+                    khu mua sắm và trung tâm thành phố.
+                </p>
+
+                <div class="home-contact-details">
+                    <span>Quận 1, TP. Hồ Chí Minh</span>
+                    <a href="tel:0123456789">0123 456 789</a>
+                    <a href="mailto:support@hotelmanagement.local">support@hotelmanagement.local</a>
+                </div>
+            </div>
+
+            <div class="col-lg-5 text-lg-end">
+                <a href="#booking" class="btn btn-light btn-lg">
+                    Đặt phòng ngay
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="~/js/home-official.js" asp-append-version="true"></script>
+}

@@ -2,6 +2,27 @@
     var isAuthenticated = User.Identity != null && User.Identity.IsAuthenticated;
     var isCustomer = User.IsInRole("Customer");
     var usesSidebar = isAuthenticated && !isCustomer;
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var actionName = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+
+    var liveSyncActions = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Admin"] = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Dashboard", "RoomTypes", "Rooms", "RoomDetails", "Services",
+            "Employees", "Customers", "CustomerDetails", "Bookings", "BookingDetails",
+            "Invoices", "InvoiceDetails", "RevenueReport", "ActivityLogs"
+        },
+        ["Receptionist"] = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Dashboard", "Bookings", "BookingDetails", "TodayCheckIns", "TodayCheckOuts",
+            "RoomStatus", "BookingServices", "Invoices", "InvoiceDetails", "Payments"
+        }
+    };
+
+    var enableManagementLiveSync = usesSidebar
+        && liveSyncActions.TryGetValue(controllerName, out var allowedActions)
+        && allowedActions.Contains(actionName);
 
     var roleTitle = "Khách";
     var roleBadgeClass = "bg-secondary";
@@ -35,6 +56,9 @@
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/home-official.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/management-live-sync.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/chat-widget.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/HotelManagement.styles.css" asp-append-version="true" />
 </head>
 
@@ -68,12 +92,12 @@
                 </button>
 
                 <div class="collapse navbar-collapse" id="topNavbar">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <ul class="navbar-nav public-primary-nav me-auto mb-2 mb-lg-0">
                         @if (!isAuthenticated || isCustomer)
                         {
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Rooms" asp-action="Index">
-                                    Phòng
+                                    Lưu trú
                                 </a>
                             </li>
 
@@ -84,14 +108,26 @@
                             </li>
 
                             <li class="nav-item">
+                                <a class="nav-link" href="/#offers">
+                                    Ưu đãi
+                                </a>
+                            </li>
+
+                            <li class="nav-item">
                                 <a class="nav-link" href="/#about">
                                     Giới thiệu
                                 </a>
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link" asp-controller="Home" asp-action="Privacy">
+                                <a class="nav-link" href="/#contact">
                                     Liên hệ
+                                </a>
+                            </li>
+
+                            <li class="nav-item d-flex align-items-center ms-lg-2">
+                                <a class="btn btn-primary btn-sm px-3" href="/#booking">
+                                    Đặt phòng
                                 </a>
                             </li>
                         }
@@ -130,6 +166,21 @@
                             }
                             else
                             {
+                            @if (User.IsInRole("Receptionist"))
+                            {
+                                <li class="nav-item d-flex align-items-center me-2">
+                                    <a asp-controller="ReceptionistChat"
+                                       asp-action="Index"
+                                       class="nav-link d-inline-flex align-items-center gap-2">
+                                        Tin nhắn
+                                        <span class="badge rounded-pill bg-danger"
+                                              data-receptionist-chat-count
+                                              aria-label="Tin nhắn khách hàng chưa đọc"
+                                              hidden></span>
+                                    </a>
+                                </li>
+                            }
+
                             <li class="nav-item d-flex align-items-center me-2">
                                 <span class="badge @roleBadgeClass">
                                     @roleTitle
@@ -249,7 +300,26 @@
                     </div>
                 }
 
-                @RenderBody()
+                @if (enableManagementLiveSync)
+                {
+                    <div class="management-live-sync-bar" data-management-live-status role="status" aria-live="polite">
+                        <span class="management-live-sync-dot" aria-hidden="true"></span>
+                        <span data-management-live-label>Tự động đồng bộ mỗi 5 giây</span>
+                        <button type="button"
+                                class="btn btn-sm btn-link p-0"
+                                data-management-live-refresh>
+                            Cập nhật ngay
+                        </button>
+                    </div>
+
+                    <div data-management-live-region data-management-live-interval="5000">
+                        @RenderBody()
+                    </div>
+                }
+                else
+                {
+                    @RenderBody()
+                }
             </div>
 
             <footer class="app-footer border-top">
@@ -272,10 +342,11 @@
 
                             <div>
                                 <div class="public-footer-title">Điều hướng</div>
-                                <a asp-controller="Rooms" asp-action="Index">Loại phòng</a>
+                                <a asp-controller="Rooms" asp-action="Index">Lưu trú</a>
                                 <a href="/#services">Dịch vụ</a>
+                                <a href="/#offers">Ưu đãi</a>
                                 <a href="/#about">Giới thiệu</a>
-                                <a asp-controller="Home" asp-action="Privacy">Liên hệ</a>
+                                <a href="/#contact">Liên hệ</a>
                             </div>
 
                             <div>
@@ -304,18 +375,29 @@
         </main>
     </div>
 
+    @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Customer"))
+    {
+        @await Html.PartialAsync("~/Views/Shared/Chat/_CustomerChatWidget.cshtml")
+    }
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    @if (enableManagementLiveSync)
+    {
+        <script src="~/js/management-live-sync.js" asp-append-version="true"></script>
+    }
+
+    @if (User.Identity?.IsAuthenticated == true
+        && (User.IsInRole("Customer") || User.IsInRole("Receptionist")))
+    {
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+        <script src="~/js/chat-notifications.js" asp-append-version="true"></script>
+    }
 
     @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Customer"))
     {
-        <a asp-controller="CustomerChat"
-           asp-action="Index"
-           class="customer-chat-floating-button">
-            <span>💬</span>
-            <span>Nhắn lễ tân</span>
-        </a>
+        <script src="~/js/customer-chat-widget.js" asp-append-version="true"></script>
     }
 
     @await RenderSectionAsync("Scripts", required: false)

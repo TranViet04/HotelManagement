@@ -53,7 +53,6 @@ namespace HotelManagement.Services.Chat
 
         public async Task<ReceptionistChatViewModel> GetReceptionistChatAsync(long receptionistId, long? conversationId)
         {
-            var conversations = await GetReceptionistConversationsAsync(receptionistId);
             List<ChatMessageViewModel> messages = new();
             string? selectedCustomerName = null;
 
@@ -68,11 +67,16 @@ namespace HotelManagement.Services.Chat
                 {
                     await MarkMessagesAsReadAsync(conversationId.Value, receptionistId);
                     messages = await GetMessagesAsync(conversationId.Value, receptionistId);
-
-                    selectedCustomerName = conversations
-                        .FirstOrDefault(c => c.ConversationId == conversationId.Value)
-                        ?.CustomerName;
                 }
+            }
+
+            var conversations = await GetReceptionistConversationsAsync(receptionistId);
+
+            if (conversationId.HasValue)
+            {
+                selectedCustomerName = conversations
+                    .FirstOrDefault(c => c.ConversationId == conversationId.Value)
+                    ?.CustomerName;
             }
 
             return new ReceptionistChatViewModel
@@ -150,9 +154,30 @@ namespace HotelManagement.Services.Chat
                         .FirstOrDefault() ?? "No messages yet",
                     UnreadCount = c.Messages.Count(m =>
                         !m.IsRead
-                        && m.SenderId != receptionistId)
+                        && m.Sender.Role == UserRoles.Customer)
                 })
                 .ToListAsync();
+        }
+
+        public Task<int> GetCustomerUnreadCountAsync(long customerId)
+        {
+            return _context.ChatMessages
+                .AsNoTracking()
+                .CountAsync(m =>
+                    m.Conversation.CustomerId == customerId
+                    && m.Conversation.Status == ChatConversationStatuses.Open
+                    && !m.IsRead
+                    && m.Sender.Role == UserRoles.Receptionist);
+        }
+
+        public Task<int> GetReceptionistUnreadCountAsync()
+        {
+            return _context.ChatMessages
+                .AsNoTracking()
+                .CountAsync(m =>
+                    m.Conversation.Status == ChatConversationStatuses.Open
+                    && !m.IsRead
+                    && m.Sender.Role == UserRoles.Customer);
         }
 
         public async Task<List<ChatMessageViewModel>> GetMessagesAsync(long conversationId, long currentUserId)
@@ -217,6 +242,7 @@ namespace HotelManagement.Services.Chat
             var message = new ChatMessage
             {
                 ConversationId = conversationId,
+                Conversation = conversation,
                 SenderId = senderId,
                 MessageType = ChatMessageTypes.Text,
                 Content = content,
@@ -295,6 +321,7 @@ namespace HotelManagement.Services.Chat
             var message = new ChatMessage
             {
                 ConversationId = conversationId,
+                Conversation = conversation,
                 SenderId = senderId,
                 MessageType = ChatMessageTypes.Image,
                 ImageUrl = $"/uploads/chat/{monthFolder}/{safeFileName}",
@@ -370,6 +397,7 @@ namespace HotelManagement.Services.Chat
             {
                 Id = message.Id,
                 ConversationId = message.ConversationId,
+                CustomerId = message.Conversation.CustomerId,
                 SenderId = message.SenderId,
                 SenderName = sender.FullName,
                 SenderRole = sender.Role,

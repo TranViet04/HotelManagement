@@ -35,6 +35,13 @@ namespace HotelManagement.Controllers
             return Json(conversations);
         }
 
+        [HttpGet("UnreadSummary")]
+        public async Task<IActionResult> UnreadSummary()
+        {
+            var unreadCount = await _chatService.GetReceptionistUnreadCountAsync();
+            return Json(new { unreadCount });
+        }
+
         private long GetCurrentUserId()
         {
             var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);

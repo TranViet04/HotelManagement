@@ -124,21 +124,29 @@
               asp-action="Details"
               asp-route-id="@Model.RoomTypeId"
               method="get"
-              class="row g-3">
+              class="row g-3"
+              data-stay-date-picker
+              data-room-availability-form>
 
             <div class="col-md-3">
-                <label class="form-label">Ngày nhận phòng</label>
+                <label for="roomCheckInDate" class="form-label">Ngày nhận phòng</label>
                 <input type="date"
+                       id="roomCheckInDate"
                        name="checkInDate"
-                       class="form-control"
+                       min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                       class="form-control stay-date-input"
+                       data-stay-check-in
                        value="@(Model.CheckInDate?.ToString("yyyy-MM-dd"))" />
             </div>
 
             <div class="col-md-3">
-                <label class="form-label">Ngày trả phòng</label>
+                <label for="roomCheckOutDate" class="form-label">Ngày trả phòng</label>
                 <input type="date"
+                       id="roomCheckOutDate"
                        name="checkOutDate"
-                       class="form-control"
+                       min="@((Model.CheckInDate?.Date ?? DateTime.Today).AddDays(1).ToString("yyyy-MM-dd"))"
+                       class="form-control stay-date-input"
+                       data-stay-check-out
                        value="@(Model.CheckOutDate?.ToString("yyyy-MM-dd"))" />
             </div>
 
@@ -161,131 +169,33 @@
             </div>
 
             <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100">
+                <button type="submit" class="btn btn-primary w-100" data-room-availability-submit>
                     Kiểm tra
                 </button>
+            </div>
+
+            <div class="col-12">
+                <div class="stay-date-tools">
+                    <span class="stay-date-tools-label">Chọn nhanh:</span>
+                    <div class="stay-date-presets" aria-label="Chọn nhanh số đêm">
+                        <button type="button" class="stay-date-preset" data-stay-nights="1">1 đêm</button>
+                        <button type="button" class="stay-date-preset" data-stay-nights="2">2 đêm</button>
+                        <button type="button" class="stay-date-preset" data-stay-nights="3">3 đêm</button>
+                        <button type="button" class="stay-date-preset" data-stay-nights="7">7 đêm</button>
+                    </div>
+                    <strong class="stay-date-summary" data-stay-summary aria-live="polite"></strong>
+                </div>
             </div>
         </form>
     </div>
 </section>
 
-@if (!Model.HasSearchCriteria)
-{
-    <div class="alert alert-info">
-        @Model.SearchMessage
-    </div>
-}
-else if (!Model.HasValidSearchCriteria)
-{
-    <div class="alert alert-warning">
-        @Model.SearchMessage
-    </div>
-}
-else if (Model.AvailableRooms == null || !Model.AvailableRooms.Any())
-{
-    <div class="alert alert-warning">
-        @Model.SearchMessage
-    </div>
-}
-else
-{
-    <section class="mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-                <h2 class="h4 fw-bold mb-1">
-                    Phòng còn trống
-                </h2>
-
-                <p class="text-muted mb-0">
-                    Tìm thấy @Model.AvailableRooms.Count phòng từ
-                    <strong>@Model.CheckInDate?.ToString("dd/MM/yyyy")</strong>
-                    đến
-                    <strong>@Model.CheckOutDate?.ToString("dd/MM/yyyy")</strong>.
-                </p>
-            </div>
-        </div>
-
-        <div class="row g-4">
-            @foreach (var room in Model.AvailableRooms)
-            {
-                <div class="col-md-6 col-xl-4">
-                    <div class="card room-card h-100 border-0 shadow-sm">
-                        <div class="card-body d-flex flex-column">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div>
-                                    <h5 class="fw-bold mb-1">
-                                        Phòng @room.RoomNumber
-                                    </h5>
-
-                                    <div class="text-muted small">
-                                        @if (room.Floor.HasValue)
-                                        {
-                                            <span>Tầng @room.Floor</span>
-                                        }
-                                        else
-                                        {
-                                            <span>Chưa cập nhật tầng</span>
-                                        }
-                                    </div>
-                                </div>
-
-                                <span class="badge bg-success">
-                                    Còn trống
-                                </span>
-                            </div>
-
-                            <div class="room-info-list mb-3">
-                                <div>
-                                    <span class="text-muted">Loại phòng:</span>
-                                    <strong>@room.RoomTypeName</strong>
-                                </div>
-
-                                <div>
-                                    <span class="text-muted">Số đêm:</span>
-                                    <strong>@room.Nights</strong>
-                                </div>
-
-                                <div>
-                                    <span class="text-muted">Sức chứa:</span>
-                                    <strong>@room.Capacity khách</strong>
-                                </div>
-                            </div>
-
-                            <div class="room-price mb-3">
-                                <div>
-                                    <span class="text-muted">Giá mỗi đêm:</span>
-                                    <strong class="text-primary">
-                                        @room.PricePerNight.ToString("N0") VND
-                                    </strong>
-                                </div>
-
-                                <div>
-                                    <span class="text-muted">Tạm tính:</span>
-                                    <strong class="text-primary fs-5">
-                                        @room.TotalRoomAmount.ToString("N0") VND
-                                    </strong>
-                                </div>
-                            </div>
-
-                            <div class="mt-auto d-grid">
-                                <a asp-controller="Bookings"
-                                   asp-action="Create"
-                                   asp-route-roomId="@room.RoomId"
-                                   asp-route-checkInDate="@Model.CheckInDate?.ToString("yyyy-MM-dd")"
-                                   asp-route-checkOutDate="@Model.CheckOutDate?.ToString("yyyy-MM-dd")"
-                                   asp-route-adults="@Model.Adults"
-                                   asp-route-children="@Model.Children"
-                                   class="btn btn-primary">
-                                    Đặt phòng này
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        </div>
-    </section>
-}
+<div id="roomAvailabilityResults"
+     class="room-availability-results"
+     data-room-availability-results
+     aria-live="polite">
+    <partial name="_AvailabilityResults" model="Model" />
+</div>
 
 @section Scripts {
     <script>

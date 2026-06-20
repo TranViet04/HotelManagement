@@ -136,8 +136,6 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
-
     <script>
         const selectedConversationId = @(Model.SelectedConversationId.HasValue ? Model.SelectedConversationId.Value : 0);
         const currentUserId = @currentUserId;
@@ -298,8 +296,18 @@
             .withAutomaticReconnect()
             .build();
 
-        connection.on("ReceiveMessage", function (message) {
+        connection.on("ReceiveMessage", async function (message) {
             appendMessage(message);
+
+            if (Number(message.conversationId) === Number(selectedConversationId)
+                && Number(message.senderId) !== Number(currentUserId)
+                && !document.hidden) {
+                try {
+                    await connection.invoke("MarkConversationAsRead", selectedConversationId);
+                } catch (err) {
+                    console.error(err);
+                }
+            }
         });
 
         connection.on("ConversationUpdated", function (conversationId) {
@@ -312,6 +320,7 @@
 
                 if (selectedConversationId > 0) {
                     await connection.invoke("JoinConversation", selectedConversationId);
+                    await connection.invoke("MarkConversationAsRead", selectedConversationId);
                 }
 
                 scrollToBottom();
@@ -392,6 +401,16 @@
                 }
             });
         }
+
+        document.addEventListener("visibilitychange", async function () {
+            if (!document.hidden && selectedConversationId > 0 && connection.state === signalR.HubConnectionState.Connected) {
+                try {
+                    await connection.invoke("MarkConversationAsRead", selectedConversationId);
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+        });
 
         startChat();
     </script>

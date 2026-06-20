@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Tìm phòng trống";
+    var todayValue = DateTime.Today.ToString("yyyy-MM-dd");
+    var checkOutMinimum = Model.CheckInDate.Date.AddDays(1).ToString("yyyy-MM-dd");
 }
 
 <section class="search-header shadow-sm p-4 p-lg-5 mb-4">
@@ -30,14 +32,16 @@
 
 <section class="card border-0 shadow-sm mb-4">
     <div class="card-body p-4">
-        <form asp-controller="Rooms" asp-action="Index" method="get" class="row g-3">
+        <form asp-controller="Rooms" asp-action="Index" method="get" class="row g-3" data-stay-date-picker>
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="col-md-3">
                 <label asp-for="CheckInDate" class="form-label">Ngày nhận phòng</label>
                 <input asp-for="CheckInDate"
                        type="date"
-                       class="form-control" />
+                       min="@todayValue"
+                       class="form-control stay-date-input"
+                       data-stay-check-in />
                 <span asp-validation-for="CheckInDate" class="text-danger"></span>
             </div>
 
@@ -45,7 +49,9 @@
                 <label asp-for="CheckOutDate" class="form-label">Ngày trả phòng</label>
                 <input asp-for="CheckOutDate"
                        type="date"
-                       class="form-control" />
+                       min="@checkOutMinimum"
+                       class="form-control stay-date-input"
+                       data-stay-check-out />
                 <span asp-validation-for="CheckOutDate" class="text-danger"></span>
             </div>
 
@@ -71,6 +77,19 @@
                 <button type="submit" class="btn btn-primary w-100">
                     Tìm phòng
                 </button>
+            </div>
+
+            <div class="col-12">
+                <div class="stay-date-tools">
+                    <span class="stay-date-tools-label">Chọn nhanh:</span>
+                    <div class="stay-date-presets" aria-label="Chọn nhanh số đêm">
+                        <button type="button" class="stay-date-preset" data-stay-nights="1">1 đêm</button>
+                        <button type="button" class="stay-date-preset" data-stay-nights="2">2 đêm</button>
+                        <button type="button" class="stay-date-preset" data-stay-nights="3">3 đêm</button>
+                        <button type="button" class="stay-date-preset" data-stay-nights="7">7 đêm</button>
+                    </div>
+                    <strong class="stay-date-summary" data-stay-summary aria-live="polite"></strong>
+                </div>
             </div>
         </form>
     </div>

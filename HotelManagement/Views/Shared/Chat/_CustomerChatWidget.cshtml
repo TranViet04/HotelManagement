@@ -1,0 +1,77 @@
+@using System.Security.Claims
+
+@{
+    var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0";
+}
+
+<div class="customer-chat-widget"
+     data-customer-chat-widget
+     data-current-user-id="@currentUserId">
+    <section class="customer-chat-widget-panel"
+             data-customer-chat-panel
+             role="dialog"
+             aria-labelledby="customerChatWidgetTitle"
+             hidden>
+        <header class="customer-chat-widget-header">
+            <div>
+                <strong id="customerChatWidgetTitle">Hỗ trợ lễ tân</strong>
+                <div class="customer-chat-widget-status" data-customer-chat-status>
+                    Sẵn sàng hỗ trợ bạn
+                </div>
+            </div>
+
+            <button type="button"
+                    class="customer-chat-widget-close"
+                    data-customer-chat-close
+                    aria-label="Đóng cửa sổ chat">
+                &times;
+            </button>
+        </header>
+
+        <div class="chat-messages customer-chat-widget-messages"
+             data-customer-chat-messages
+             aria-live="polite">
+            <div class="customer-chat-widget-loading">Đang tải cuộc trò chuyện...</div>
+        </div>
+
+        <div class="chat-input-area customer-chat-widget-input">
+            <form class="chat-image-form" data-customer-chat-image-form>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="conversationId" data-customer-chat-conversation-id />
+                <input type="file"
+                       name="image"
+                       accept="image/jpeg,image/png,image/webp"
+                       class="form-control form-control-sm"
+                       data-customer-chat-image />
+                <button type="submit" class="btn btn-outline-primary btn-sm">
+                    Gửi ảnh
+                </button>
+            </form>
+
+            <form class="chat-text-form" data-customer-chat-message-form>
+                <input type="text"
+                       class="form-control"
+                       maxlength="2000"
+                       autocomplete="off"
+                       placeholder="Nhập tin nhắn..."
+                       data-customer-chat-message />
+                <button type="submit" class="btn btn-primary">Gửi</button>
+            </form>
+
+            <div class="text-danger small mt-2" data-customer-chat-error></div>
+        </div>
+    </section>
+
+    <button type="button"
+            class="customer-chat-floating-button"
+            data-customer-chat-toggle
+            aria-expanded="false"
+            aria-label="Nhắn tin với lễ tân">
+        <span class="customer-chat-button-icon" aria-hidden="true"></span>
+        <span>Nhắn lễ tân</span>
+        <span class="customer-chat-unread-count"
+              data-customer-chat-count
+              aria-label="Tin nhắn chưa đọc"
+              hidden></span>
+    </button>
+</div>

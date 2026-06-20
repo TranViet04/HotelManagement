@@ -106,6 +106,11 @@ namespace HotelManagement.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_AvailabilityResults", model);
+            }
+
             return View(model);
         }
     }

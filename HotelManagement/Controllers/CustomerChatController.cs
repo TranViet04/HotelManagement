@@ -18,12 +18,44 @@ namespace HotelManagement.Controllers
         }
 
         [HttpGet("")]
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
+        {
+            return RedirectToAction("Index", "Home", new { openChat = true });
+        }
+
+        [HttpGet("Messages")]
+        public async Task<IActionResult> Messages()
         {
             var customerId = GetCurrentUserId();
             var model = await _chatService.GetCustomerChatAsync(customerId);
 
-            return View(model);
+            return Json(new
+            {
+                model.ConversationId,
+                Messages = model.Messages.Select(message => new
+                {
+                    message.Id,
+                    message.ConversationId,
+                    message.SenderId,
+                    message.SenderName,
+                    message.SenderRole,
+                    message.MessageType,
+                    message.Content,
+                    message.ImageUrl,
+                    message.OriginalFileName,
+                    message.IsMine,
+                    CreatedAtText = message.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                })
+            });
+        }
+
+        [HttpGet("Summary")]
+        public async Task<IActionResult> Summary()
+        {
+            var customerId = GetCurrentUserId();
+            var unreadCount = await _chatService.GetCustomerUnreadCountAsync(customerId);
+
+            return Json(new { unreadCount });
         }
 
         private long GetCurrentUserId()

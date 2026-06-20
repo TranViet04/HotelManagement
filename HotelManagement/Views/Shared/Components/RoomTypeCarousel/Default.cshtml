@@ -10,16 +10,17 @@
 }
 else
 {
-    <section class="room-type-carousel mb-4" id="roomTypeCarousel">
+    <section class="room-type-carousel mb-5" id="roomTypeCarousel" data-autoplay-interval="2500" aria-label="Hạng phòng nổi bật">
         <div class="room-type-carousel-inner">
             @for (var i = 0; i < Model.Count; i++)
             {
                 var item = Model[i];
 
                 <article class="room-type-slide @(i == 0 ? "active" : "")"
+                         aria-hidden="@(i == 0 ? "false" : "true")"
                          style="background-image: linear-gradient(90deg, rgba(10, 17, 31, 0.82), rgba(10, 17, 31, 0.34)), url('@item.ImageUrl');">
                     <div class="room-type-content">
-                        <div class="room-type-eyebrow">Loại phòng</div>
+                        <div class="room-type-eyebrow">Hạng phòng nổi bật</div>
 
                         <h2>@item.Name</h2>
 
@@ -37,11 +38,11 @@ else
 
                         <div class="room-type-actions">
                             <a href="/Rooms/Details/@item.Id" class="btn-room-outline">
-                                Xem chi tiết
+                                Chi tiết hạng phòng
                             </a>
 
-                            <a href="/Rooms" class="btn-room-primary">
-                                Xem danh sách phòng
+                            <a href="#booking" class="btn-room-primary">
+                                Kiểm tra phòng trống
                             </a>
                         </div>
 
@@ -55,21 +56,22 @@ else
 
         @if (Model.Count > 1)
         {
-            <button type="button" class="room-type-nav prev" aria-label="Loại phòng trước">
+            <button type="button" class="room-type-nav prev" aria-label="Hạng phòng trước">
                 ‹
             </button>
 
-            <button type="button" class="room-type-nav next" aria-label="Loại phòng tiếp theo">
+            <button type="button" class="room-type-nav next" aria-label="Hạng phòng tiếp theo">
                 ›
             </button>
 
-            <div class="room-type-dots" aria-label="Chọn loại phòng">
+            <div class="room-type-dots" aria-label="Chọn hạng phòng">
                 @for (var i = 0; i < Model.Count; i++)
                 {
                     <button type="button"
                             class="room-type-dot @(i == 0 ? "active" : "")"
                             data-index="@i"
-                            aria-label="Chuyển đến loại phòng @(i + 1)">
+                            aria-current="@(i == 0 ? "true" : "false")"
+                            aria-label="Chuyển đến hạng phòng @(i + 1)">
                     </button>
                 }
             </div>
@@ -97,22 +99,39 @@ else
     .room-type-slide {
         position: absolute;
         inset: 0;
-        display: none;
+        z-index: 0;
+        display: flex;
+        align-items: center;
         min-height: 520px;
         color: #ffffff;
         background-position: center;
         background-size: cover;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.62s ease, visibility 0s linear 0.62s;
     }
 
     .room-type-slide.active {
-        display: flex;
-        align-items: center;
+        z-index: 1;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transition-delay: 0s;
     }
 
     .room-type-content {
         width: min(680px, calc(100% - 120px));
         margin-left: 72px;
         padding: 40px 0;
+        opacity: 0;
+        transform: translateX(18px);
+        transition: opacity 0.48s ease 0.12s, transform 0.48s ease 0.12s;
+    }
+
+    .room-type-slide.active .room-type-content {
+        opacity: 1;
+        transform: translateX(0);
     }
 
     .room-type-eyebrow {
@@ -289,6 +308,13 @@ else
             right: auto;
         }
     }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .room-type-slide,
+        .room-type-content {
+            transition: none;
+        }
+    }
 </style>
 
 <script>
@@ -303,32 +329,82 @@ else
         const dots = Array.from(root.querySelectorAll('.room-type-dot'));
         const prevButton = root.querySelector('.room-type-nav.prev');
         const nextButton = root.querySelector('.room-type-nav.next');
+        const autoplayInterval = Number.parseInt(root.dataset.autoplayInterval, 10) || 2500;
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         if (!slides.length) {
             return;
         }
 
         let currentIndex = 0;
+        let autoplayTimer = null;
 
         const showSlide = (index) => {
             currentIndex = (index + slides.length) % slides.length;
 
             slides.forEach((slide, slideIndex) => {
-                slide.classList.toggle('active', slideIndex === currentIndex);
+                const isActive = slideIndex === currentIndex;
+                slide.classList.toggle('active', isActive);
+                slide.setAttribute('aria-hidden', isActive ? 'false' : 'true');
             });
 
             dots.forEach((dot, dotIndex) => {
-                dot.classList.toggle('active', dotIndex === currentIndex);
+                const isActive = dotIndex === currentIndex;
+                dot.classList.toggle('active', isActive);
+                dot.setAttribute('aria-current', isActive ? 'true' : 'false');
             });
         };
 
-        prevButton?.addEventListener('click', () => showSlide(currentIndex - 1));
-        nextButton?.addEventListener('click', () => showSlide(currentIndex + 1));
+        const stopAutoplay = () => {
+            if (autoplayTimer !== null) {
+                window.clearInterval(autoplayTimer);
+                autoplayTimer = null;
+            }
+        };
+
+        const startAutoplay = () => {
+            stopAutoplay();
+
+            if (slides.length <= 1 || prefersReducedMotion || document.hidden) {
+                return;
+            }
+
+            autoplayTimer = window.setInterval(() => {
+                showSlide(currentIndex + 1);
+            }, autoplayInterval);
+        };
+
+        const showManualSlide = (index) => {
+            showSlide(index);
+            startAutoplay();
+        };
+
+        prevButton?.addEventListener('click', () => showManualSlide(currentIndex - 1));
+        nextButton?.addEventListener('click', () => showManualSlide(currentIndex + 1));
 
         dots.forEach((dot) => {
             dot.addEventListener('click', () => {
-                showSlide(Number.parseInt(dot.dataset.index, 10));
+                showManualSlide(Number.parseInt(dot.dataset.index, 10));
             });
         });
+
+        root.addEventListener('mouseenter', stopAutoplay);
+        root.addEventListener('mouseleave', startAutoplay);
+        root.addEventListener('focusin', stopAutoplay);
+        root.addEventListener('focusout', (event) => {
+            if (!root.contains(event.relatedTarget)) {
+                startAutoplay();
+            }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopAutoplay();
+            } else {
+                startAutoplay();
+            }
+        });
+
+        startAutoplay();
     })();
 </script>

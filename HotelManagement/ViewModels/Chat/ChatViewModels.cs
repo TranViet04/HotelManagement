@@ -70,6 +70,8 @@ namespace HotelManagement.ViewModels.Chat
 
         public long ConversationId { get; set; }
 
+        public long CustomerId { get; set; }
+
         public long SenderId { get; set; }
 
         public string SenderName { get; set; } = string.Empty;

@@ -59,10 +59,14 @@
         Dịch vụ phát sinh
     </a>
 
-    <a class="sidebar-link @Active("ReceptionistChat", "Index")"
+    <a class="sidebar-link d-flex align-items-center justify-content-between gap-2 @Active("ReceptionistChat", "Index")"
        asp-controller="ReceptionistChat"
        asp-action="Index">
-        Trao đổi khách hàng
+        <span>Trao đổi khách hàng</span>
+        <span class="badge rounded-pill bg-danger"
+              data-receptionist-chat-count
+              aria-label="Tin nhắn khách hàng chưa đọc"
+              hidden></span>
     </a>
 
     <div class="sidebar-section">Thanh toán</div>

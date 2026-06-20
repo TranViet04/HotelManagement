@@ -96,7 +96,11 @@
     <div class="col-lg-7">
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
-                <form asp-controller="Bookings" asp-action="Create" method="post">
+                <form asp-controller="Bookings"
+                      asp-action="Create"
+                      method="post"
+                      data-stay-date-picker
+                      data-price-per-night="@Model.PricePerNight.ToString(System.Globalization.CultureInfo.InvariantCulture)">
                     @Html.AntiForgeryToken()
 
                     <input asp-for="RoomId" type="hidden" />
@@ -108,7 +112,9 @@
                             <label asp-for="CheckInDate" class="form-label">Ngày nhận phòng</label>
                             <input asp-for="CheckInDate"
                                    type="date"
-                                   class="form-control" />
+                                   min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                   class="form-control stay-date-input"
+                                   data-stay-check-in />
                             <span asp-validation-for="CheckInDate" class="text-danger"></span>
                         </div>
 
@@ -116,8 +122,23 @@
                             <label asp-for="CheckOutDate" class="form-label">Ngày trả phòng</label>
                             <input asp-for="CheckOutDate"
                                    type="date"
-                                   class="form-control" />
+                                   min="@Model.CheckInDate.Date.AddDays(1).ToString("yyyy-MM-dd")"
+                                   class="form-control stay-date-input"
+                                   data-stay-check-out />
                             <span asp-validation-for="CheckOutDate" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="stay-date-tools">
+                                <span class="stay-date-tools-label">Chọn nhanh:</span>
+                                <div class="stay-date-presets" aria-label="Chọn nhanh số đêm">
+                                    <button type="button" class="stay-date-preset" data-stay-nights="1">1 đêm</button>
+                                    <button type="button" class="stay-date-preset" data-stay-nights="2">2 đêm</button>
+                                    <button type="button" class="stay-date-preset" data-stay-nights="3">3 đêm</button>
+                                    <button type="button" class="stay-date-preset" data-stay-nights="7">7 đêm</button>
+                                </div>
+                                <strong class="stay-date-summary" data-stay-summary aria-live="polite"></strong>
+                            </div>
                         </div>
 
                         <div class="col-md-6">
@@ -153,7 +174,7 @@
                     <div class="booking-summary bg-light p-3 mb-4">
                         <div class="d-flex justify-content-between mb-2">
                             <span>Số đêm</span>
-                            <strong>@Model.Nights</strong>
+                            <strong data-booking-nights>@Model.Nights</strong>
                         </div>
 
                         <div class="d-flex justify-content-between mb-2">
@@ -163,7 +184,7 @@
 
                         <div class="d-flex justify-content-between fs-5">
                             <span>Tạm tính</span>
-                            <strong class="text-primary">@Model.TotalRoomAmount.ToString("N0") VND</strong>
+                            <strong class="text-primary" data-booking-total>@Model.TotalRoomAmount.ToString("N0") VND</strong>
                         </div>
                     </div>
 

@@ -46,8 +46,17 @@ namespace HotelManagement.Controllers
                         .SendAsync("ReceiveMessage", message);
 
                     await _hubContext.Clients
+                        .Group(ChatHub.GetCustomerGroupName(message.CustomerId))
+                        .SendAsync("CustomerMessageReceived", message);
+
+                    await _hubContext.Clients
                         .Group(ChatHub.ReceptionistsGroupName)
                         .SendAsync("ConversationUpdated", conversationId);
+
+                    var unreadCount = await _chatService.GetCustomerUnreadCountAsync(message.CustomerId);
+                    await _hubContext.Clients
+                        .Group(ChatHub.GetCustomerGroupName(message.CustomerId))
+                        .SendAsync("CustomerUnreadCountChanged", unreadCount, conversationId);
                 }
                 catch (Exception ex)
                 {
