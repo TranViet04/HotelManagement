@@ -686,6 +686,14 @@ body {
   border-bottom: 1px dashed #e5e7eb;
 }
 
+.available-room-img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  background-color: #e5e7eb;
+}
+
 .room-price {
   border-top: 1px solid #e5e7eb;
   padding-top: 12px;

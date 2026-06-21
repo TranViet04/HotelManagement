@@ -189,7 +189,12 @@ namespace HotelManagement.Services.Customer
                     PricePerNight = r.RoomType.Price,
                     Capacity = r.RoomType.Capacity,
                     BedType = r.RoomType.BedType,
-                    ThumbnailUrl = r.RoomType.ThumbnailUrl,
+                    ImageUrl = r.RoomImages
+                        .OrderByDescending(image => image.IsMain)
+                        .ThenBy(image => image.SortOrder)
+                        .ThenBy(image => image.Id)
+                        .Select(image => image.ImageUrl)
+                        .FirstOrDefault(),
                     Nights = nights,
                     TotalRoomAmount = nights * r.RoomType.Price
                 })
