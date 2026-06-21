@@ -182,3 +182,21 @@
     }
   });
 })();
+
+(() => {
+  document.addEventListener("slid.bs.carousel", (event) => {
+    const carousel = event.target.closest("[data-room-image-carousel]");
+
+    if (!carousel) {
+      return;
+    }
+
+    const slides = Array.from(carousel.querySelectorAll(".carousel-item"));
+    const activeIndex = slides.findIndex((slide) => slide.classList.contains("active"));
+    const counter = carousel.querySelector("[data-room-image-counter]");
+
+    if (counter && activeIndex >= 0) {
+      counter.textContent = `${activeIndex + 1} / ${slides.length}`;
+    }
+  });
+})();

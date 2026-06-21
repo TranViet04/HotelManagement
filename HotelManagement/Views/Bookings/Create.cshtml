@@ -31,18 +31,51 @@
 <div class="row g-4">
     <div class="col-lg-5">
         <div class="card border-0 shadow-sm h-100">
-            @if (!string.IsNullOrWhiteSpace(Model.ThumbnailUrl))
-            {
-                <img src="@Model.ThumbnailUrl"
-                     class="card-img-top booking-room-img"
-                     alt="@Model.RoomTypeName" />
+            @{
+                var roomImageUrls = Model.RoomImageUrls.Any()
+                    ? Model.RoomImageUrls
+                    : new List<string> { "/images/rooms/default-room.jpg" };
+                const string bookingRoomCarouselId = "bookingRoomCarousel";
             }
-            else
-            {
-                <div class="booking-room-img booking-room-placeholder d-flex align-items-center justify-content-center">
-                    <span>@Model.RoomTypeName</span>
+
+            <div id="@bookingRoomCarouselId"
+                 class="carousel slide booking-room-carousel"
+                 data-bs-ride="false"
+                 data-room-image-carousel>
+                <div class="carousel-inner">
+                    @for (var imageIndex = 0; imageIndex < roomImageUrls.Count; imageIndex++)
+                    {
+                        <div class="carousel-item @(imageIndex == 0 ? "active" : "")">
+                            <img src="@roomImageUrls[imageIndex]"
+                                 class="d-block w-100 booking-room-img"
+                                 alt="Phòng @Model.RoomNumber - ảnh @(imageIndex + 1)" />
+                        </div>
+                    }
                 </div>
-            }
+
+                @if (roomImageUrls.Count > 1)
+                {
+                    <button type="button"
+                            class="carousel-control-prev"
+                            data-bs-target="#@bookingRoomCarouselId"
+                            data-bs-slide="prev"
+                            aria-label="Ảnh trước">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    </button>
+
+                    <button type="button"
+                            class="carousel-control-next"
+                            data-bs-target="#@bookingRoomCarouselId"
+                            data-bs-slide="next"
+                            aria-label="Ảnh sau">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    </button>
+
+                    <div class="room-image-count" data-room-image-counter>
+                        1 / @roomImageUrls.Count
+                    </div>
+                }
+            </div>
 
             <div class="card-body">
                 <h4 class="fw-bold mb-2">@Model.RoomTypeName</h4>

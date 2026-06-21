@@ -22,6 +22,8 @@ namespace HotelManagement.ViewModels.Customer
 
         public string? ThumbnailUrl { get; set; }
 
+        public List<string> RoomImageUrls { get; set; } = new();
+
         public int? Floor { get; set; }
 
         [DataType(DataType.Date)]

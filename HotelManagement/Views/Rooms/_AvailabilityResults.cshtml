@@ -39,12 +39,52 @@ else
         <div class="row g-4">
             @foreach (var room in Model.AvailableRooms)
             {
+                var carouselId = $"availableRoomCarousel_{room.RoomId}";
+                var imageUrls = room.ImageUrls.Any()
+                    ? room.ImageUrls
+                    : new List<string> { "/images/rooms/default-room.jpg" };
+
                 <div class="col-md-6 col-xl-4">
                     <div class="card room-card h-100 border-0 shadow-sm">
-                        <img src="@(string.IsNullOrWhiteSpace(room.ImageUrl) ? "/images/rooms/default-room.jpg" : room.ImageUrl)"
-                             alt="Phòng @room.RoomNumber"
-                             class="available-room-img"
-                             loading="lazy" />
+                        <div id="@carouselId"
+                             class="carousel slide available-room-carousel"
+                             data-bs-ride="false"
+                             data-room-image-carousel>
+                            <div class="carousel-inner">
+                                @for (var imageIndex = 0; imageIndex < imageUrls.Count; imageIndex++)
+                                {
+                                    <div class="carousel-item @(imageIndex == 0 ? "active" : "")">
+                                        <img src="@imageUrls[imageIndex]"
+                                             alt="Phòng @room.RoomNumber - ảnh @(imageIndex + 1)"
+                                             class="d-block w-100 available-room-img"
+                                             loading="lazy" />
+                                    </div>
+                                }
+                            </div>
+
+                            @if (imageUrls.Count > 1)
+                            {
+                                <button type="button"
+                                        class="carousel-control-prev"
+                                        data-bs-target="#@carouselId"
+                                        data-bs-slide="prev"
+                                        aria-label="Ảnh trước">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                </button>
+
+                                <button type="button"
+                                        class="carousel-control-next"
+                                        data-bs-target="#@carouselId"
+                                        data-bs-slide="next"
+                                        aria-label="Ảnh sau">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                </button>
+
+                                <div class="room-image-count" data-room-image-counter>
+                                    1 / @imageUrls.Count
+                                </div>
+                            }
+                        </div>
 
                         <div class="card-body d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-start mb-3">

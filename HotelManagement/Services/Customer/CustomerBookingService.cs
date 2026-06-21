@@ -34,6 +34,7 @@ namespace HotelManagement.Services.Customer
             var room = await _context.Rooms
                 .AsNoTracking()
                 .Include(r => r.RoomType)
+                .Include(r => r.RoomImages)
                 .FirstOrDefaultAsync(r => r.Id == roomId);
 
             if (room == null || room.RoomType == null)
@@ -69,6 +70,12 @@ namespace HotelManagement.Services.Customer
                 Capacity = room.RoomType.Capacity,
                 BedType = room.RoomType.BedType,
                 ThumbnailUrl = room.RoomType.ThumbnailUrl,
+                RoomImageUrls = room.RoomImages
+                    .OrderByDescending(image => image.IsMain)
+                    .ThenBy(image => image.SortOrder)
+                    .ThenBy(image => image.Id)
+                    .Select(image => image.ImageUrl)
+                    .ToList(),
                 CheckInDate = finalCheckInDate,
                 CheckOutDate = finalCheckOutDate,
                 Adults = finalAdults,

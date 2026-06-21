@@ -20,7 +20,7 @@ namespace HotelManagement.ViewModels.Customer
 
         public string? BedType { get; set; }
 
-        public string? ImageUrl { get; set; }
+        public List<string> ImageUrls { get; set; } = new();
 
         public int Nights { get; set; }
 
